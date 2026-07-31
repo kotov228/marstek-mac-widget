@@ -547,7 +547,7 @@ final class GraphPanel: NSView {
         detailsLabel.stringValue = "\(mode) · \(Int(reading.soc.rounded()))% · \(localizedState(reading.state.rawValue)) · \(Int(reading.watts.rounded())) W\n\(temperatureLabel): \(temperature) · \(capacityLabel): \(capacity) / \(ratedCapacity)\(currentPowerText)"
     }
 
-    @objc private func rangeChanged() { graph.hours = [1, 6, 24, 24 * 7][selector.indexOfSelectedItem] }
+    @objc private func rangeChanged() { graph.hours = [1.0, 6.0, 24.0, 24.0 * 7.0][selector.indexOfSelectedItem] }
     @objc private func bleClicked() { onBLE?() }
     @objc private func settingsClicked() { onSettings?() }
     @objc private func quitClicked() { onQuit?() }
