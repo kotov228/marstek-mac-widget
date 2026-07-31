@@ -73,3 +73,12 @@
 "settingsPartialInfo" = "Der Betriebsmodus wurde angewendet, aber DOD oder LED wurde nicht bestätigt. Siehe /tmp/marstek-widget.log für Details.";
 "modeNotConfirmed" = "Der Modus wurde von der Station nicht bestätigt";
 "modeNotConfirmedInfo" = "Die Station wechselte nicht zu %@. DOD und LED wurden nicht geändert. Siehe /tmp/marstek-widget.log.";
+"checkUpdates" = "Nach Updates suchen";
+"checkingUpdates" = "Suche nach Updates…";
+"noUpdate" = "Kein Update verfügbar";
+"noUpdateInfo" = "Du verwendest die neueste Version (%@).";
+"updateDownloaded" = "Update heruntergeladen";
+"updateDownloadedInfo" = "Release %@ wurde heruntergeladen nach:\n%@";
+"openDownloads" = "Im Finder anzeigen";
+"updateFailed" = "Update-Prüfung fehlgeschlagen";
+"releaseAssetMissing" = "Der neueste Release enthält keine ZIP-Datei.";

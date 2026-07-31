@@ -925,6 +925,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private lazy var bleClient = MarstekBLEClient()
     private weak var settingsHostField: NSTextField?
     private weak var settingsSearchButton: NSButton?
+    private weak var settingsUpdateButton: NSButton?
     private weak var discoveredPopup: NSPopUpButton?
     private weak var settingsStatusLabel: NSTextField?
     private weak var settingsAlert: NSAlert?
@@ -1141,6 +1142,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let hostField = NSTextField(string: host)
         let searchButton = NSButton(title: L("autoSearch"), target: self, action: #selector(discoverIP))
         searchButton.bezelStyle = .rounded
+        let updateButton = NSButton(title: L("checkUpdates"), target: self, action: #selector(checkForUpdates))
+        updateButton.bezelStyle = .rounded
         let statusLabel = NSTextField(labelWithString: "")
         statusLabel.textColor = .secondaryLabelColor
         statusLabel.preferredMaxLayoutWidth = 330
@@ -1151,15 +1154,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         discovered.isHidden = true
         settingsHostField = hostField
         settingsSearchButton = searchButton
+        settingsUpdateButton = updateButton
         discoveredPopup = discovered
         settingsStatusLabel = statusLabel
         let languageLabel = NSTextField(labelWithString: L("language"))
         let languagePopup = NSPopUpButton()
         languagePopup.addItems(withTitles: [L("english"), L("ukrainian"), L("german")])
         languagePopup.selectItem(at: [AppLanguage.english, .ukrainian, .german].firstIndex(of: language()) ?? 0)
-        let stack = NSStackView(views: [languageLabel, languagePopup, modeLabel, modePopup, manualPowerLabel, manualPowerField, upsPowerLabel, upsPowerHint, aiHint, hostLabel, hostField, searchButton, discovered, statusLabel])
+        let stack = NSStackView(views: [languageLabel, languagePopup, modeLabel, modePopup, manualPowerLabel, manualPowerField, upsPowerLabel, upsPowerHint, aiHint, hostLabel, hostField, searchButton, discovered, statusLabel, updateButton])
         stack.orientation = .vertical; stack.spacing = 8; stack.alignment = .leading
-        stack.frame = NSRect(x: 0, y: 0, width: 340, height: 320)
+        stack.frame = NSRect(x: 0, y: 0, width: 340, height: 360)
 
         let alert = NSAlert()
         alert.messageText = L("settingsTitle")
@@ -1205,6 +1209,79 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         } else {
             UserDefaults.standard.set(selectedMode, forKey: "marstekMode")
             refresh()
+        }
+    }
+
+    @objc private func checkForUpdates() {
+        settingsUpdateButton?.isEnabled = false
+        settingsUpdateButton?.title = L("checkingUpdates")
+        let endpoint = URL(string: "https://api.github.com/repos/kotov228/marstek-mac-widget/releases/latest")!
+        var request = URLRequest(url: endpoint)
+        request.setValue("Marstek-Mac-Widget", forHTTPHeaderField: "User-Agent")
+        request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
+        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+            guard let self else { return }
+            guard let data, error == nil,
+                  let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+                self.finishUpdate(title: L("updateFailed"), message: error?.localizedDescription ?? L("updateFailed"))
+                return
+            }
+            do {
+                let release = try JSONDecoder().decode(GitHubRelease.self, from: data)
+                guard let asset = release.assets.first(where: { $0.name.hasSuffix(".zip") }) else {
+                    self.finishUpdate(title: L("updateFailed"), message: L("releaseAssetMissing"))
+                    return
+                }
+                if !isVersion(release.tagName, newerThan: appVersion()) {
+                    self.finishUpdate(title: L("noUpdate"), message: String(format: L("noUpdateInfo"), appVersion()))
+                    return
+                }
+                self.downloadUpdate(asset: asset, releaseTag: release.tagName)
+            } catch {
+                self.finishUpdate(title: L("updateFailed"), message: error.localizedDescription)
+            }
+        }.resume()
+    }
+
+    private func downloadUpdate(asset: GitHubReleaseAsset, releaseTag: String) {
+        URLSession.shared.downloadTask(with: asset.downloadURL) { [weak self] temporaryURL, response, error in
+            guard let self else { return }
+            guard let temporaryURL, error == nil,
+                  let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+                self.finishUpdate(title: L("updateFailed"), message: error?.localizedDescription ?? L("updateFailed"))
+                return
+            }
+            do {
+                let downloads = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]
+                let destination = downloads.appendingPathComponent(asset.name)
+                try? FileManager.default.removeItem(at: destination)
+                try FileManager.default.copyItem(at: temporaryURL, to: destination)
+                DispatchQueue.main.async {
+                    self.settingsUpdateButton?.isEnabled = true
+                    self.settingsUpdateButton?.title = L("checkUpdates")
+                    let alert = NSAlert()
+                    alert.messageText = L("updateDownloaded")
+                    alert.informativeText = String(format: L("updateDownloadedInfo"), releaseTag, destination.path)
+                    alert.addButton(withTitle: L("openDownloads"))
+                    alert.addButton(withTitle: L("cancel"))
+                    if alert.runModal() == .alertFirstButtonReturn {
+                        NSWorkspace.shared.activateFileViewerSelecting([destination])
+                    }
+                }
+            } catch {
+                self.finishUpdate(title: L("updateFailed"), message: error.localizedDescription)
+            }
+        }.resume()
+    }
+
+    private func finishUpdate(title: String, message: String) {
+        DispatchQueue.main.async {
+            self.settingsUpdateButton?.isEnabled = true
+            self.settingsUpdateButton?.title = L("checkUpdates")
+            let alert = NSAlert()
+            alert.messageText = title
+            alert.informativeText = message
+            alert.runModal()
         }
     }
     @objc private func quit() { NSApp.terminate(nil) }

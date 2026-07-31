@@ -73,3 +73,12 @@
 "settingsPartialInfo" = "Режим роботи застосовано, але DOD або LED не підтверджено. Перевір /tmp/marstek-widget.log для деталей.";
 "modeNotConfirmed" = "Режим не підтверджено станцією";
 "modeNotConfirmedInfo" = "Станція не перейшла в %@. DOD і LED не змінювалися. Перевір /tmp/marstek-widget.log.";
+"checkUpdates" = "Перевірити оновлення";
+"checkingUpdates" = "Перевіряю оновлення…";
+"noUpdate" = "Оновлень немає";
+"noUpdateInfo" = "У тебе остання версія (%@).";
+"updateDownloaded" = "Оновлення завантажено";
+"updateDownloadedInfo" = "Реліз %@ завантажено у:\n%@";
+"openDownloads" = "Показати у Finder";
+"updateFailed" = "Не вдалося перевірити оновлення";
+"releaseAssetMissing" = "В останньому релізі немає ZIP-файлу.";
