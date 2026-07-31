@@ -6,9 +6,29 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  test-and-build:
+  main-build:
+    if: github.event_name == 'push'
     runs-on: macos-14
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Run regression checks and build
+        run: ./build-app.sh
+
+  pull-request-build:
+    if: github.event_name == 'pull_request'
+    runs-on: macos-14
+    environment:
+      name: maintainer-approval
     steps:
       - name: Check out repository
         uses: actions/checkout@v7

@@ -32,10 +32,43 @@ open "Marstek Widget.app"
 `build-app.sh` runs the regression tests before compiling the application and
 copies the localization files into the application bundle.
 
+## Opening a downloaded release
+
+The release ZIP is ad-hoc signed, so macOS Gatekeeper may show a warning the
+first time the application is opened. If the app was extracted into
+`~/Downloads`, remove the quarantine attribute and open it with:
+
+```sh
+app_path="$HOME/Downloads/Marstek Widget.app"
+xattr -dr com.apple.quarantine "$app_path"
+open "$app_path"
+```
+
+If the application is stored elsewhere, replace the value of `app_path` with
+its path. This is required only for the ad-hoc signed release build.
+
+To move it to the system Applications folder, remove the quarantine attribute,
+and launch it in one step:
+
+```sh
+app_path="$HOME/Downloads/Marstek Widget.app"
+app_destination="/Applications/Marstek Widget.app"
+sudo ditto "$app_path" "$app_destination"
+sudo xattr -dr com.apple.quarantine "$app_destination"
+open "$app_destination"
+```
+
+The `sudo` command may ask for your macOS login password. After this, launch
+the widget normally from Applications or Spotlight.
+
 ## GitHub Actions and releases
 
 Every push and pull request targeting `main` runs the regression checks and a
 macOS build through GitHub Actions.
+
+Pull request builds use a protected `maintainer-approval` environment and wait
+for repository-owner approval before running. Releases can only be triggered
+by the repository owner.
 
 To publish a release, push a version tag:
 
