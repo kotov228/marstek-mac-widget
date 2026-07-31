@@ -1,0 +1,5 @@
+.build/
+Marstek Widget.app/
+.DS_Store
+.swiftpm/
+
