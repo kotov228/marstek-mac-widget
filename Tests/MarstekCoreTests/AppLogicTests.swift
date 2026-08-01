@@ -101,4 +101,10 @@ final class AppLogicTests: XCTestCase {
             "UPS"
         )
     }
+
+    func testManualPowerUsesAnExplicitSign() {
+        XCTAssertEqual(MarstekAppLogic.signedPower(1500), "+1500 W")
+        XCTAssertEqual(MarstekAppLogic.signedPower(-1500), "−1500 W")
+        XCTAssertEqual(MarstekAppLogic.signedPower(0), "0 W")
+    }
 }

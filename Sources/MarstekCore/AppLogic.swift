@@ -21,6 +21,12 @@ public enum MarstekAppLogic {
         return effectiveReported
     }
 
+    public static func signedPower(_ watts: Int) -> String {
+        if watts > 0 { return "+\(watts) W" }
+        if watts < 0 { return "−\(abs(watts)) W" }
+        return "0 W"
+    }
+
     public static func selectedHost(discoveredHosts: [String], savedHost: String) -> String? {
         let uniqueHosts = discoveredHosts.reduce(into: [String]()) { result, host in
             guard !host.isEmpty, !result.contains(host) else { return }

@@ -533,7 +533,11 @@ final class GraphPanel: NSView {
 
     func update(_ reading: BatteryReading, samples: [HistorySample]) {
         graph.samples = samples
-        let mode = localizedMode(reading.mode ?? "UPS")
+        var mode = localizedMode(reading.mode ?? "UPS")
+        if MarstekAppLogic.canonicalMode(reading.mode) == "Manual",
+           let manualPower = UserDefaults.standard.object(forKey: "marstekManualPower") as? NSNumber {
+            mode += " " + MarstekAppLogic.signedPower(manualPower.intValue)
+        }
         let temperature = reading.temperature.map { String(format: "%.1f°C", $0) } ?? "—"
         let capacity = reading.capacityWh.map { String(format: "%.2f kWh", $0 / 1000) } ?? "—"
         let ratedCapacity = reading.ratedCapacityWh.map { String(format: "%.2f kWh", $0 / 1000) } ?? "—"
