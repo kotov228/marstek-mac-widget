@@ -1,9 +1,21 @@
 # 🔋 Marstek Mac Widget
 
-A native macOS menu bar application for monitoring Marstek Venus energy storage
-stations over the local network. The widget talks directly to the station's
-Local/Open API through UDP port `30000` — no cloud account or external service
-is required for normal telemetry.
+A native macOS menu bar application for monitoring and controlling a Marstek
+Venus energy storage station on the local network. The widget talks directly to
+the station's Local/Open API through UDP port `30000`; normal telemetry,
+history, station discovery, and supported controls do not require a Marstek
+cloud account.
+
+## 🚀 Highlights in v1.2.0
+
+- More resilient Local API polling: serial UDP requests, response validation,
+  retries, and longer waits for slow `ES.GetMode` responses.
+- A compact native Settings window with English, Ukrainian, and German
+  localization.
+- Per-station mode and DOD persistence, so a temporary API gap does not blank
+  the active mode or reset the edited DOD value.
+- Safer Manual-mode controls, signed power display, BLE diagnostic flow, and
+  broader regression coverage.
 
 ## ✨ What it can do
 
@@ -15,6 +27,8 @@ is required for normal telemetry.
   excessive requests.
 - Shows temperature, usable capacity, rated capacity, grid power, and load
   power when those values are available.
+- Keeps the last confirmed station mode visible during a temporary Local API
+  delay, while retaining the raw response in the local log.
 - Uses different colors for charging, discharging, and waiting states.
 
 ### 📈 History graph
@@ -27,6 +41,8 @@ Click the menu bar widget to open the history window.
 - Colors points and segments according to charging, discharging, or waiting.
 - Click any point to see its exact time, charge percentage, capacity, state, and
   power.
+- In Manual mode, shows the configured signed setpoint next to the mode
+  (`−` charge / `+` discharge).
 - Keeps the graph usable when telemetry is temporarily unavailable.
 
 ### ⚙️ Station settings
@@ -37,6 +53,9 @@ The Settings button provides local station controls:
 - 🤖 **AI optimization** mode.
 - 🛠️ **Manual** mode with configurable power from `−2500` to `+2500 W`.
 - 🔌 **UPS** mode with the station's UPS charging range shown in the UI.
+- 🔋 **DOD** (depth of discharge) editing from `30%` to `88%`, with a visible
+  reserve calculation. The value is saved per station only after `DOD.SET`
+  confirms success.
 - 🌐 Automatic station discovery on the local network.
 - ✏️ Manual IP address entry when discovery is unavailable.
 - 💡 Current station status and saved connection details.
@@ -45,7 +64,17 @@ The Settings button provides local station controls:
 
 The station IP is discovered automatically at launch and saved locally. A
 previously discovered address is used only as a temporary fallback when the
-station does not answer discovery.
+station does not answer discovery. If several unknown stations respond, the app
+does not choose one arbitrarily: select the intended IP in Settings.
+
+> **Local API limitation:** the current firmware accepts DOD changes but does
+> not return the current DOD through the Local API. The Settings field therefore
+> shows the last value confirmed by this widget; leave it unchanged unless you
+> want to change DOD.
+
+> **UPS limitation:** the widget shows the UPS charging-power range, but this
+> firmware does not expose UPS charge-power control through the Local/Open API.
+> Change that value in the official Marstek app.
 
 ### 🧪 BMS diagnostics over BLE
 
@@ -133,12 +162,14 @@ the application and copies all localization files into the app bundle.
 ## 🌐 Local API and discovery
 
 Enable `Open API` in the Marstek app first. On every launch, the widget sends a
-local discovery broadcast, selects the first station that responds, and saves
-its IP address in macOS user defaults. No station IP is hardcoded in the
-application.
+local discovery broadcast, reuses the saved station when it responds, and saves
+the selected IP address in macOS user defaults. No station IP is hardcoded in
+the application.
 
-Normal telemetry uses the Marstek Local API over UDP port `30000`. The app does
-not depend on the Marstek cloud for battery status, history, or operating-mode
+Normal telemetry uses the Marstek Local API over UDP port `30000`. Requests are
+sent serially with pacing and retries because Venus firmware can delay or drop
+back-to-back UDP datagrams. The app does not depend on the Marstek cloud for
+battery status, history, station discovery, or supported operating-mode
 controls.
 
 ## 🧪 Tests
@@ -150,7 +181,7 @@ python3 Tests/test_mode_api.py
 ```
 
 Run a live Local API test against a station. This changes operating modes and
-restores Manual mode when finished:
+restores the explicitly selected mode when finished:
 
 ```sh
 python3 -u Tests/test_mode_api.py \
@@ -168,7 +199,7 @@ in `/tmp/marstek-widget.log`; other reported modes are not overridden.
 
 ## 🤖 GitHub Actions and releases
 
-- Every push to `main` runs regression checks and a macOS build.
+- Every push to `main` runs regression checks and a macOS 26 build.
 - Pull request builds use the protected `maintainer-approval` environment.
 - Release builds package `Marstek Widget.app` as a ZIP archive.
 - GitHub release notes are generated automatically.
@@ -178,8 +209,8 @@ in `/tmp/marstek-widget.log`; other reported modes are not overridden.
 Publish a release with:
 
 ```sh
-git tag v1.0.0
-git push origin v1.0.0
+git tag -a v1.2.0 -m "Marstek Mac Widget v1.2.0"
+git push origin v1.2.0
 ```
 
 ## 🗂️ Project layout
