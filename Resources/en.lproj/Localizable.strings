@@ -24,7 +24,8 @@
 "upsHint" = "Change this in the Marstek app. It is not available through the Open API.";
 "aiHint" = "AI optimization is enabled by the station.";
 "dod" = "Maximum depth of discharge (DOD), %";
-"dodHint" = "88% = use up to 88%; reserve ≈ 12%";
+"dodHint" = "%d%% = use up to %d%%; reserve ≈ %d%%";
+"dodReadUnavailable" = "The Local API cannot read the current DOD. Enter a value only when you want to change it.";
 "ip" = "Marstek IP address";
 "led" = "Case LED";
 "settingsTitle" = "Marstek Settings";
@@ -45,7 +46,7 @@
 "found" = "Found";
 "chooseStation" = "Choose station";
 "scanTitle" = "Marstek BLE diagnostics";
-"scanInfo" = "Scanning nearby and reading BMS data. This can take up to 10 seconds.";
+"scanInfo" = "Scanning nearby and reading BMS data. If Bluetooth is off, turn it on — scanning continues automatically. This can take up to 20 seconds.";
 "bmsTitle" = "Marstek BMS";
 "bmsVersion" = "BMS version";
 "voltage" = "Voltage";
@@ -68,11 +69,13 @@
 "bleTimeout" = "The BLE command did not respond.";
 "openApiInfo" = "Open API must be enabled in the Marstek app.";
 "dodRange" = "DOD must be between 30 and 88%.";
+"dodNotConfirmed" = "DOD was not confirmed";
+"dodNotConfirmedInfo" = "The station did not confirm the new discharge depth. Check /tmp/marstek-widget.log for details.";
 "manualPowerRange" = "Manual power must be between −2500 and 2500 W.";
 "settingsPartial" = "Some settings were not confirmed";
 "settingsPartialInfo" = "The operating mode was applied, but DOD or LED was not confirmed. Check /tmp/marstek-widget.log for details.";
 "modeNotConfirmed" = "Mode was not confirmed by the station";
-"modeNotConfirmedInfo" = "The station did not switch to %@. DOD and LED were not changed. Check /tmp/marstek-widget.log.";
+"modeNotConfirmedInfo" = "The station did not confirm %@. Check /tmp/marstek-widget.log for details.";
 "checkUpdates" = "Check for updates";
 "checkingUpdates" = "Checking for updates…";
 "noUpdate" = "No update available";

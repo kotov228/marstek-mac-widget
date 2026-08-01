@@ -2,3 +2,5 @@
 Marstek Widget.app
 .DS_Store
 .swiftpm/
+__pycache__/
+*.pyc

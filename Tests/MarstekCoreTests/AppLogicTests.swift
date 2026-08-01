@@ -1,3 +1,4 @@
+import Foundation
 import XCTest
 @testable import MarstekCore
 
@@ -72,6 +73,27 @@ final class AppLogicTests: XCTestCase {
         XCTAssertNil(MarstekAppLogic.effectiveMode(reportedMode: nil, lastKnownMode: nil))
     }
 
+    func testStoredModeMigratesLegacyValueToSelectedHost() {
+        XCTAssertEqual(
+            MarstekAppLogic.storedMode(
+                savedMode: "UPS",
+                savedModeHost: nil,
+                selectedHost: savedStation
+            ),
+            "UPS"
+        )
+    }
+
+    func testStoredModeRejectsValueFromAnotherHost() {
+        XCTAssertNil(
+            MarstekAppLogic.storedMode(
+                savedMode: "UPS",
+                savedModeHost: otherStation,
+                selectedHost: savedStation
+            )
+        )
+    }
+
     func testAcknowledgedManualHandlesFirmwareUPSReport() {
         XCTAssertEqual(
             MarstekAppLogic.effectiveMode(
@@ -106,5 +128,56 @@ final class AppLogicTests: XCTestCase {
         XCTAssertEqual(MarstekAppLogic.signedPower(1500), "+1500 W")
         XCTAssertEqual(MarstekAppLogic.signedPower(-1500), "−1500 W")
         XCTAssertEqual(MarstekAppLogic.signedPower(0), "0 W")
+    }
+
+    func testResponseIDMatchesSwiftIntAndNSNumber() {
+        XCTAssertTrue(MarstekAppLogic.responseIDMatches(response: ["id": 42], expectedID: 42))
+        XCTAssertTrue(
+            MarstekAppLogic.responseIDMatches(
+                response: ["id": NSNumber(value: 42)],
+                expectedID: 42
+            )
+        )
+    }
+
+    func testResponseIDRejectsMissingNilAndMismatchedIDs() {
+        XCTAssertFalse(MarstekAppLogic.responseIDMatches(response: nil, expectedID: 42))
+        XCTAssertFalse(MarstekAppLogic.responseIDMatches(response: [:], expectedID: 42))
+        XCTAssertFalse(MarstekAppLogic.responseIDMatches(response: ["id": 41], expectedID: 42))
+        XCTAssertFalse(
+            MarstekAppLogic.responseIDMatches(
+                response: ["id": NSNumber(value: 43)],
+                expectedID: 42
+            )
+        )
+        XCTAssertFalse(MarstekAppLogic.responseIDMatches(response: ["id": "42"], expectedID: 42))
+    }
+
+    func testNormalizedSigned16ConvertsUnsignedHighBitValues() {
+        XCTAssertEqual(MarstekAppLogic.normalizedSigned16(32768), -32768)
+        XCTAssertEqual(MarstekAppLogic.normalizedSigned16(32769), -32767)
+        XCTAssertEqual(MarstekAppLogic.normalizedSigned16(65534), -2)
+        XCTAssertEqual(MarstekAppLogic.normalizedSigned16(65535), -1)
+    }
+
+    func testNormalizedSigned16PreservesOtherValues() {
+        XCTAssertNil(MarstekAppLogic.normalizedSigned16(nil))
+        XCTAssertEqual(MarstekAppLogic.normalizedSigned16(-32768), -32768)
+        XCTAssertEqual(MarstekAppLogic.normalizedSigned16(-1), -1)
+        XCTAssertEqual(MarstekAppLogic.normalizedSigned16(0), 0)
+        XCTAssertEqual(MarstekAppLogic.normalizedSigned16(32767), 32767)
+        XCTAssertEqual(MarstekAppLogic.normalizedSigned16(65536), 65536)
+        XCTAssertEqual(MarstekAppLogic.normalizedSigned16(100_000), 100_000)
+    }
+
+    func testStoredManualPowerUsesDefaultOnlyForMissingValue() {
+        XCTAssertEqual(MarstekAppLogic.storedManualPower(nil), 1000)
+        XCTAssertEqual(MarstekAppLogic.storedManualPower(nil, defaultValue: 750), 750)
+    }
+
+    func testStoredManualPowerPreservesExplicitValuesIncludingZero() {
+        XCTAssertEqual(MarstekAppLogic.storedManualPower(NSNumber(value: 0)), 0)
+        XCTAssertEqual(MarstekAppLogic.storedManualPower(NSNumber(value: 2500)), 2500)
+        XCTAssertEqual(MarstekAppLogic.storedManualPower(NSNumber(value: -2500)), -2500)
     }
 }

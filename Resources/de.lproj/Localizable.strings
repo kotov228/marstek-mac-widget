@@ -24,7 +24,8 @@
 "upsHint" = "In der Marstek-App ändern. Über die Open API nicht verfügbar.";
 "aiHint" = "AI-Optimierung ist aktiviert.";
 "dod" = "Maximale Entladetiefe (DOD), %";
-"dodHint" = "88% = bis zu 88% nutzen; Reserve ≈ 12%";
+"dodHint" = "%d%% = bis zu %d%% nutzen; Reserve ≈ %d%%";
+"dodReadUnavailable" = "Die Local API kann den aktuellen DOD nicht lesen. Gib nur einen Wert ein, wenn du ihn ändern möchtest.";
 "ip" = "Marstek-IP-Adresse";
 "led" = "LED am Gerät";
 "settingsTitle" = "Marstek-Einstellungen";
@@ -45,7 +46,7 @@
 "found" = "Gefunden";
 "chooseStation" = "Station auswählen";
 "scanTitle" = "Marstek-BLE-Diagnose";
-"scanInfo" = "Suche nach der Station und lese BMS-Daten. Dies kann bis zu 10 Sekunden dauern.";
+"scanInfo" = "Suche nach der Station und lese BMS-Daten. Ist Bluetooth aus, schalte es ein — die Suche läuft automatisch weiter. Dies kann bis zu 20 Sekunden dauern.";
 "bmsTitle" = "Marstek BMS";
 "bmsVersion" = "BMS-Version";
 "voltage" = "Spannung";
@@ -68,11 +69,13 @@
 "bleTimeout" = "Der BLE-Befehl hat nicht geantwortet.";
 "openApiInfo" = "Die Open API muss in der Marstek-App aktiviert sein.";
 "dodRange" = "DOD muss zwischen 30 und 88% liegen.";
+"dodNotConfirmed" = "DOD wurde nicht bestätigt";
+"dodNotConfirmedInfo" = "Die Station hat die neue Entladetiefe nicht bestätigt. Siehe /tmp/marstek-widget.log für Details.";
 "manualPowerRange" = "Die Manual-Leistung muss zwischen −2500 und 2500 W liegen.";
 "settingsPartial" = "Einige Einstellungen wurden nicht bestätigt";
 "settingsPartialInfo" = "Der Betriebsmodus wurde angewendet, aber DOD oder LED wurde nicht bestätigt. Siehe /tmp/marstek-widget.log für Details.";
 "modeNotConfirmed" = "Der Modus wurde von der Station nicht bestätigt";
-"modeNotConfirmedInfo" = "Die Station wechselte nicht zu %@. DOD und LED wurden nicht geändert. Siehe /tmp/marstek-widget.log.";
+"modeNotConfirmedInfo" = "Die Station hat %@ nicht bestätigt. Siehe /tmp/marstek-widget.log für Details.";
 "checkUpdates" = "Nach Updates suchen";
 "checkingUpdates" = "Suche nach Updates…";
 "noUpdate" = "Kein Update verfügbar";
