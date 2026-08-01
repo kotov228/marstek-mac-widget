@@ -1,42 +1,83 @@
-# Marstek Mac Widget
+# 🔋 Marstek Mac Widget
 
-A native macOS menu bar widget for Marstek Venus energy storage systems. The
-widget communicates directly with the station through the Marstek Open API
-over UDP port `30000`.
+A native macOS menu bar application for monitoring Marstek Venus energy storage
+stations over the local network. The widget talks directly to the station's
+Local/Open API through UDP port `30000` — no cloud account or external service
+is required for normal telemetry.
 
-## Requirements
+## ✨ What it can do
 
-- macOS 13 or later
-- Swift 5.9 or later
-- A Marstek station with the local/Open API enabled
-- Mac and station connected to the same local network
+### 📊 Live battery monitoring
 
-Enable `Open API` in the Marstek mobile application before starting the
-widget.
+- Shows the battery state of charge directly in the macOS menu bar.
+- Displays the current state: charging, discharging, or waiting.
+- Refreshes telemetry once per minute to keep the display stable and avoid
+  excessive requests.
+- Shows temperature, usable capacity, rated capacity, grid power, and load
+  power when those values are available.
+- Uses different colors for charging, discharging, and waiting states.
 
-## Build and run
+### 📈 History graph
 
-Run directly from the package:
+Click the menu bar widget to open the history window.
 
-```sh
-swift run
-```
+- Select a range from the last hour, 6 hours, 24 hours, or 7 days.
+- Uses a dynamic time-axis step appropriate for the selected range.
+- Plots state of charge and battery capacity in kWh.
+- Colors points and segments according to charging, discharging, or waiting.
+- Click any point to see its exact time, charge percentage, capacity, state, and
+  power.
+- Keeps the graph usable when telemetry is temporarily unavailable.
 
-Build the signed application bundle:
+### ⚙️ Station settings
 
-```sh
-./build-app.sh
-open "Marstek Widget.app"
-```
+The Settings button provides local station controls:
 
-`build-app.sh` runs the regression tests before compiling the application and
-copies the localization files into the application bundle.
+- 🌱 **Self-consumption** mode.
+- 🤖 **AI optimization** mode.
+- 🛠️ **Manual** mode with configurable power from `−2500` to `+2500 W`.
+- 🔌 **UPS** mode with the station's UPS charging range shown in the UI.
+- 🌐 Automatic station discovery on the local network.
+- ✏️ Manual IP address entry when discovery is unavailable.
+- 💡 Current station status and saved connection details.
+- 🌍 Language selection: English, Ukrainian, or German.
+- 🔄 Check for the latest GitHub release and download the update ZIP.
 
-## Opening a downloaded release
+The station IP is discovered automatically at launch and saved locally. A
+previously discovered address is used only as a temporary fallback when the
+station does not answer discovery.
 
-The release ZIP is ad-hoc signed, so macOS Gatekeeper may show a warning the
-first time the application is opened. If the app was extracted into
-`~/Downloads`, remove the quarantine attribute and open it with:
+### 🧪 BMS diagnostics over BLE
+
+The optional BMS screen reads diagnostics directly from a nearby Marstek
+station over Bluetooth Low Energy (BLE):
+
+- BMS firmware version.
+- Battery voltage and current.
+- Battery and MOSFET temperatures.
+- Design capacity.
+- Error and warning status.
+- Individual cell voltages.
+
+Bluetooth access is requested only when BMS diagnostics are opened. The normal
+Local API widget does not need Bluetooth permissions.
+
+## ✅ Requirements
+
+- macOS 13 or later.
+- A Marstek Venus station with `Open API` enabled in the Marstek mobile app.
+- Mac and station connected to the same local network.
+- Bluetooth enabled only if BLE diagnostics are needed.
+
+## 📦 Install a release
+
+Download the latest ZIP from the
+[GitHub Releases page](https://github.com/kotov228/marstek-mac-widget/releases),
+then extract `Marstek Widget.app`.
+
+Because the release is ad-hoc signed, macOS may show a Gatekeeper warning the
+first time it is opened. The following universal command removes the quarantine
+attribute and launches the app from Downloads:
 
 ```sh
 app_path="$HOME/Downloads/Marstek Widget.app"
@@ -44,11 +85,7 @@ xattr -dr com.apple.quarantine "$app_path"
 open "$app_path"
 ```
 
-If the application is stored elsewhere, replace the value of `app_path` with
-its path. This is required only for the ad-hoc signed release build.
-
-To move it to the system Applications folder, remove the quarantine attribute,
-and launch it in one step:
+To move it to `/Applications`, allow the launch, and open it in one step:
 
 ```sh
 app_path="$HOME/Downloads/Marstek Widget.app"
@@ -58,55 +95,55 @@ sudo xattr -dr com.apple.quarantine "$app_destination"
 open "$app_destination"
 ```
 
-The `sudo` command may ask for your macOS login password. After this, launch
-the widget normally from Applications or Spotlight.
+The `sudo` command may ask for the macOS login password. After installation,
+the widget can be launched normally from Applications or Spotlight.
 
-## GitHub Actions and releases
+## 🔄 In-app updates
 
-Every push and pull request targeting `main` runs the regression checks and a
-macOS build through GitHub Actions.
+Open the widget, click **Settings**, and choose **Check for updates**. The app
+checks the latest release from GitHub, downloads its ZIP to `~/Downloads`, and
+reveals the file in Finder. Extract the new application and replace the old one
+in `/Applications` if desired.
 
-Pull request builds use a protected `maintainer-approval` environment and wait
-for repository-owner approval before running. Releases can only be triggered
-by the repository owner.
+## 🛠️ Build and run from source
 
-To publish a release, push a version tag:
+Requirements for development:
+
+- macOS 13 or later.
+- Swift 5.9 or later.
+- Xcode Command Line Tools or Xcode.
+
+Run directly from the Swift package:
 
 ```sh
-git tag v1.0.0
-git push origin v1.0.0
+swift run
 ```
 
-The release workflow builds the application, packages `Marstek Widget.app` as
-a ZIP archive, and creates a GitHub Release with generated release notes.
+Build the application bundle, run regression checks, sign it ad-hoc, and open
+it:
 
-## Network discovery
+```sh
+./build-app.sh
+open "Marstek Widget.app"
+```
 
-On every launch, the widget broadcasts a discovery request on the local
-network. The first Marstek station found is saved as the current IP address and
-is then used for telemetry requests. If discovery temporarily receives no
-response, the last discovered address is used as a fallback. The address can
-also be changed manually or discovered again from Settings.
+The build script runs the payload and mode-transition tests before compiling
+the application and copies all localization files into the app bundle.
 
-The discovery process does not require a hardcoded station IP.
+## 🌐 Local API and discovery
 
-## Features
+Enable `Open API` in the Marstek app first. On every launch, the widget sends a
+local discovery broadcast, selects the first station that responds, and saves
+its IP address in macOS user defaults. No station IP is hardcoded in the
+application.
 
-- Battery state of charge and charging/discharging status
-- Battery power, temperature, capacity, and available energy data
-- Historical graph with selectable time ranges and point details
-- Charging/discharging/idle status shown with different colors
-- Local operating-mode controls for Auto, AI, Manual, and UPS
-- Manual power control from `−2500` to `+2500` W
-- BMS diagnostics over Bluetooth Low Energy (BLE), including cell voltages,
-  temperatures, current, voltage, errors, and warnings
-- English, Ukrainian, and German application languages
+Normal telemetry uses the Marstek Local API over UDP port `30000`. The app does
+not depend on the Marstek cloud for battery status, history, or operating-mode
+controls.
 
-BLE access is requested only when the BMS diagnostics screen is opened.
+## 🧪 Tests
 
-## Tests
-
-Run the payload and transition-matrix checks without changing the station:
+Run static payload and transition checks without changing the station:
 
 ```sh
 python3 Tests/test_mode_api.py
@@ -122,16 +159,40 @@ python3 -u Tests/test_mode_api.py \
   --live
 ```
 
-The live test covers all 12 directed transitions between the four supported
-modes. On Venus E firmware 148, Manual commands can be acknowledged with
+The live test covers all 12 directed transitions between Auto, AI, Manual, and
+UPS. On Venus E firmware 148, Manual commands may be acknowledged with
 `set_result = 1` while `ES.GetMode` still reports `UPS`; the test reports this
-case explicitly as `ACK_ONLY`.
+explicitly as `ACK_ONLY`.
 
-## Project layout
+## 🤖 GitHub Actions and releases
 
-- `Sources/MarstekMacWidget/main.swift` — application and Local API client
-- `Sources/MarstekMacWidget/Localization.swift` — localization loader
-- `Resources/*/Localizable.strings` — English, Ukrainian, and German strings
-- `Tests/test_manual_payload.sh` — Manual payload regression checks
-- `Tests/test_mode_api.py` — Local API payload and live transition tests
-- `build-app.sh` — test, build, bundle, and signing script
+- Every push to `main` runs regression checks and a macOS build.
+- Pull request builds use the protected `maintainer-approval` environment.
+- Release builds package `Marstek Widget.app` as a ZIP archive.
+- GitHub release notes are generated automatically.
+- Releases are created from version tags and can be triggered only by the
+  repository owner.
+
+Publish a release with:
+
+```sh
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+## 🗂️ Project layout
+
+- `Sources/MarstekMacWidget/main.swift` — macOS application, UI, Local API
+  client, graph, settings, and BLE diagnostics.
+- `Sources/MarstekMacWidget/Localization.swift` — localization and update
+  release helpers.
+- `Resources/*/Localizable.strings` — English, Ukrainian, and German strings.
+- `Tests/test_manual_payload.sh` — Manual payload regression checks.
+- `Tests/test_mode_api.py` — Local API payload and live transition tests.
+- `build-app.sh` — test, build, bundle, and ad-hoc signing script.
+
+## 📄 License
+
+This project is provided as-is for local Marstek station monitoring and
+control. Use operating-mode controls carefully and verify changes in the
+official Marstek application.
