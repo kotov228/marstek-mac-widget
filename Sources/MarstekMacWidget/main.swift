@@ -944,6 +944,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private weak var settingsUPSLabel: NSTextField?
     private weak var settingsUPSHint: NSTextField?
     private weak var settingsAIHint: NSTextField?
+    private var lastKnownMode = MarstekAppLogic.canonicalMode(
+        UserDefaults.standard.string(forKey: "marstekLastKnownMode")
+            ?? UserDefaults.standard.string(forKey: "marstekMode")
+    )
     private var host: String { UserDefaults.standard.string(forKey: "marstekHost") ?? "" }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -982,10 +986,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             guard let self else { return }
             switch result {
             case .success(let value):
-                self.reading = value
-                self.history.add(value)
-                self.item.button?.title = "🔋 \(Int(value.soc.rounded()))%"
-                self.graphPanel?.update(value, samples: self.history.samples)
+                if let reportedMode = MarstekAppLogic.canonicalMode(value.mode) {
+                    self.lastKnownMode = reportedMode
+                    UserDefaults.standard.set(reportedMode, forKey: "marstekLastKnownMode")
+                }
+                let displayValue = value.withMode(
+                    MarstekAppLogic.effectiveMode(
+                        reportedMode: value.mode,
+                        lastKnownMode: self.lastKnownMode
+                    )
+                )
+                self.reading = displayValue
+                self.history.add(displayValue)
+                self.item.button?.title = "🔋 \(Int(displayValue.soc.rounded()))%"
+                self.graphPanel?.update(displayValue, samples: self.history.samples)
             case .failure:
                 // Keep the last good value visible during a temporary UDP loss.
                 if self.reading == nil { self.item.button?.title = "🔋 --%" }
@@ -1123,7 +1137,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func openSettings() {
-        let currentMode = MarstekAppLogic.canonicalMode(reading?.mode)
+        let currentMode = MarstekAppLogic.effectiveMode(
+            reportedMode: reading?.mode,
+            lastKnownMode: lastKnownMode
+        )
         let modeLabel = NSTextField(labelWithString: L("workMode"))
         let modePopup = NSPopUpButton()
         modePopup.addItems(withTitles: settingsModeValues.map { localizedMode($0) })
@@ -1131,7 +1148,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             modePopup.selectItem(at: currentIndex)
         } else {
             modePopup.select(nil)
-            modePopup.isEnabled = false
         }
         modePopup.target = self
         modePopup.action = #selector(modeChanged)

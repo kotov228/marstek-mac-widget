@@ -56,4 +56,19 @@ final class AppLogicTests: XCTestCase {
         XCTAssertNil(MarstekAppLogic.canonicalMode("Passive"))
         XCTAssertEqual(MarstekAppLogic.canonicalMode("manual"), "Manual")
     }
+
+    func testReportedModeAlwaysWinsOverLastKnownMode() {
+        XCTAssertEqual(
+            MarstekAppLogic.effectiveMode(reportedMode: "UPS", lastKnownMode: "Manual"),
+            "UPS"
+        )
+    }
+
+    func testLastKnownModeSurvivesAnEmptyModeResponse() {
+        XCTAssertEqual(
+            MarstekAppLogic.effectiveMode(reportedMode: nil, lastKnownMode: "Auto"),
+            "Auto"
+        )
+        XCTAssertNil(MarstekAppLogic.effectiveMode(reportedMode: nil, lastKnownMode: nil))
+    }
 }

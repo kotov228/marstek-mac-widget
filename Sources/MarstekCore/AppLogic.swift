@@ -8,6 +8,10 @@ public enum MarstekAppLogic {
         return supportedModes.first { $0.caseInsensitiveCompare(value) == .orderedSame }
     }
 
+    public static func effectiveMode(reportedMode: String?, lastKnownMode: String?) -> String? {
+        canonicalMode(reportedMode) ?? canonicalMode(lastKnownMode)
+    }
+
     public static func selectedHost(discoveredHosts: [String], savedHost: String) -> String? {
         let uniqueHosts = discoveredHosts.reduce(into: [String]()) { result, host in
             guard !host.isEmpty, !result.contains(host) else { return }
