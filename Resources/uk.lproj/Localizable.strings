@@ -24,7 +24,8 @@
 "upsHint" = "Змінюється у застосунку Marstek. Через Open API недоступна.";
 "aiHint" = "AI optimization увімкнено станцією.";
 "dod" = "Максимальна глибина розряду (DOD), %";
-"dodHint" = "88% = розрядити максимум 88%; резерв ≈ 12%";
+"dodHint" = "%d%% = розрядити максимум %d%%; резерв ≈ %d%%";
+"dodReadUnavailable" = "Local API не повертає поточний DOD. Вводь значення лише коли хочеш його змінити.";
 "ip" = "IP-адреса Marstek";
 "led" = "LED на корпусі";
 "settingsTitle" = "Налаштування Marstek";
@@ -45,7 +46,7 @@
 "found" = "Знайдено";
 "chooseStation" = "Обери станцію";
 "scanTitle" = "BLE-діагностика Marstek";
-"scanInfo" = "Сканую станцію поблизу та читаю BMS. Це займає до 10 секунд.";
+"scanInfo" = "Сканую станцію поблизу та читаю BMS. Якщо Bluetooth вимкнений, увімкни його — пошук продовжиться автоматично. Це займає до 20 секунд.";
 "bmsTitle" = "BMS Marstek";
 "bmsVersion" = "Версія BMS";
 "voltage" = "Напруга";
@@ -68,11 +69,13 @@
 "bleTimeout" = "BLE-команда не відповіла.";
 "openApiInfo" = "Open API має бути увімкнений у застосунку Marstek.";
 "dodRange" = "DOD має бути від 30 до 88%.";
+"dodNotConfirmed" = "DOD не підтверджено";
+"dodNotConfirmedInfo" = "Станція не підтвердила нову глибину розряду. Перевір /tmp/marstek-widget.log для деталей.";
 "manualPowerRange" = "Потужність Manual має бути від −2500 до 2500 Вт.";
 "settingsPartial" = "Частину налаштувань не підтверджено";
 "settingsPartialInfo" = "Режим роботи застосовано, але DOD або LED не підтверджено. Перевір /tmp/marstek-widget.log для деталей.";
 "modeNotConfirmed" = "Режим не підтверджено станцією";
-"modeNotConfirmedInfo" = "Станція не перейшла в %@. DOD і LED не змінювалися. Перевір /tmp/marstek-widget.log.";
+"modeNotConfirmedInfo" = "Станція не підтвердила %@. Перевір /tmp/marstek-widget.log для деталей.";
 "checkUpdates" = "Перевірити оновлення";
 "checkingUpdates" = "Перевіряю оновлення…";
 "noUpdate" = "Оновлень немає";

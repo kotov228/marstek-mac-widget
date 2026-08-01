@@ -2,6 +2,7 @@ import AppKit
 import CoreBluetooth
 import Foundation
 import Darwin
+import MarstekCore
 
 enum AppLanguage: String {
     case english = "en"
@@ -11,60 +12,6 @@ enum AppLanguage: String {
 
 func language() -> AppLanguage {
     AppLanguage(rawValue: UserDefaults.standard.string(forKey: "marstekLanguage") ?? "en") ?? .english
-}
-
-private func legacyL(_ key: String) -> String {
-    let values: [AppLanguage: [String: String]] = [
-        .english: [
-            "charging": "Charging", "discharging": "Discharging", "idle": "Idle", "offline": "Offline",
-            "lastHour": "Last hour", "last6": "Last 6 hours", "last24": "Last 24 hours", "last7": "Last 7 days", "noData": "No data for this period",
-            "waiting": "Waiting for data…", "bmsBle": "BMS via BLE", "settings": "Settings…", "quit": "Quit", "history": "Marstek — charge history",
-            "mode": "Current mode", "workMode": "Operating mode", "autoMode": "Self-consumption", "aiMode": "AI optimization", "manualMode": "Manual", "passiveMode": "Passive", "upsMode": "UPS", "manualPower": "Manual power, W (− charge / + discharge)", "upsPower": "UPS charging power: 100–2500 W", "upsHint": "Change this in the Marstek app. It is not available through the Open API.", "aiHint": "AI optimization is enabled by the station.",
-            "dod": "Maximum depth of discharge (DOD), %", "dodHint": "88% = use up to 88%; reserve ≈ 12%", "ip": "Marstek IP address", "led": "Case LED",
-            "settingsTitle": "Marstek Settings", "settingsInfo": "DOD is the share of battery capacity that may be used.", "apply": "Apply", "cancel": "Cancel", "save": "Save", "language": "Language",
-            "english": "English", "ukrainian": "Ukrainian", "german": "German", "temperature": "Temperature", "capacity": "Capacity", "grid": "Grid", "load": "Load", "autoSearch": "Find automatically", "searching": "Searching…", "found": "Found", "chooseStation": "Choose station",
-            "scanTitle": "Marstek BLE diagnostics", "scanInfo": "Scanning nearby and reading BMS data. This can take up to 10 seconds.", "bmsTitle": "Marstek BMS",
-            "bmsVersion": "BMS version", "voltage": "Voltage", "current": "Current", "bmsCapacity": "Capacity", "bmsTemperature": "BMS temperature", "mosfet": "MOSFET",
-            "noErrors": "No errors", "error": "Error", "warning": "Warning", "cells": "Cells", "bluetoothOn": "Turn on Bluetooth on your Mac.",
-            "bluetoothPermission": "Allow Marstek Widget to access Bluetooth in System Settings → Privacy & Security → Bluetooth.", "bleUnsupported": "This Mac does not support Bluetooth Low Energy.",
-            "notFound": "Marstek was not found. Move closer to the station.", "bleBusy": "A BLE scan is already running.", "bleChars": "Marstek BLE characteristics were not found.",
-            "bmsIncomplete": "The BMS response is incomplete.", "runtimeIncomplete": "The runtime response is incomplete.", "bleTimeout": "The BLE command did not respond.",
-            "openApiInfo": "Open API must be enabled in the Marstek app.", "dodRange": "DOD must be between 30 and 88%.", "manualPowerRange": "Manual power must be between −5000 and 5000 W.", "settingsPartial": "Not all settings were applied", "settingsPartialInfo": "UPS did not switch. Check /tmp/marstek-widget.log for details.", "modeNotConfirmed": "Mode was not confirmed by the station", "modeNotConfirmedInfo": "The station did not switch to %@. DOD and LED were not changed. Check /tmp/marstek-widget.log."
-        ],
-        .ukrainian: [
-            "charging": "Заряджається", "discharging": "Розряджається", "idle": "Очікує", "offline": "Немає зв’язку",
-            "lastHour": "Остання година", "last6": "Останні 6 годин", "last24": "Останні 24 години", "last7": "Останні 7 днів", "noData": "Ще немає даних за цей період",
-            "waiting": "Очікування даних…", "bmsBle": "BMS по BLE", "settings": "Налаштування…", "quit": "Вийти", "history": "Marstek — історія заряду",
-            "mode": "Поточний режим", "workMode": "Режим роботи", "autoMode": "Власне споживання", "aiMode": "AI оптимізація", "manualMode": "Ручний", "passiveMode": "Пасивний", "upsMode": "UPS", "manualPower": "Потужність Manual, Вт (− заряд / + розряд)", "upsPower": "Потужність заряджання UPS: 100–2500 Вт", "upsHint": "Змінюється у застосунку Marstek. Через Open API недоступна.", "aiHint": "AI optimization увімкнено станцією.",
-            "dod": "Максимальна глибина розряду (DOD), %", "dodHint": "88% = розрядити максимум 88%; резерв ≈ 12%", "ip": "IP-адреса Marstek", "led": "LED на корпусі",
-            "settingsTitle": "Налаштування Marstek", "settingsInfo": "DOD — частка ємності батареї, яку дозволено використати.", "apply": "Застосувати", "cancel": "Скасувати", "save": "Зберегти", "language": "Мова",
-            "english": "Англійська", "ukrainian": "Українська", "german": "Німецька", "temperature": "Температура", "capacity": "Ємність", "grid": "Мережа", "load": "Навантаження", "autoSearch": "Знайти автоматично", "searching": "Пошук…", "found": "Знайдено", "chooseStation": "Обери станцію",
-            "scanTitle": "BLE-діагностика Marstek", "scanInfo": "Сканую станцію поблизу та читаю BMS. Це займає до 10 секунд.", "bmsTitle": "BMS Marstek",
-            "bmsVersion": "Версія BMS", "voltage": "Напруга", "current": "Струм", "bmsCapacity": "Ємність", "bmsTemperature": "Температура BMS", "mosfet": "MOSFET",
-            "noErrors": "Помилок немає", "error": "Помилка", "warning": "Warning", "cells": "Комірки", "bluetoothOn": "Увімкни Bluetooth на Mac.",
-            "bluetoothPermission": "Надай Marstek Widget доступ до Bluetooth у System Settings → Privacy & Security → Bluetooth.", "bleUnsupported": "Цей Mac не підтримує Bluetooth Low Energy.",
-            "notFound": "Marstek не знайдено. Підійди ближче до станції.", "bleBusy": "BLE-сканування вже виконується.", "bleChars": "BLE-характеристики Marstek не знайдені.",
-            "bmsIncomplete": "BMS-відповідь неповна.", "runtimeIncomplete": "Runtime-відповідь неповна.", "bleTimeout": "BLE-команда не відповіла.",
-            "openApiInfo": "Open API має бути увімкнений у застосунку Marstek.", "dodRange": "DOD має бути від 30 до 88%.", "manualPowerRange": "Потужність Manual має бути від −5000 до 5000 Вт.", "settingsPartial": "Не всі налаштування застосовано", "settingsPartialInfo": "UPS не перемкнувся. Перевір /tmp/marstek-widget.log для деталей.", "modeNotConfirmed": "Режим не підтверджено станцією", "modeNotConfirmedInfo": "Станція не перейшла в %@. DOD і LED не змінювалися. Перевір /tmp/marstek-widget.log."
-        ],
-        .german: [
-            "charging": "Wird geladen", "discharging": "Entladung", "idle": "Wartet", "offline": "Keine Verbindung",
-            "lastHour": "Letzte Stunde", "last6": "Letzte 6 Stunden", "last24": "Letzte 24 Stunden", "last7": "Letzte 7 Tage", "noData": "Keine Daten für diesen Zeitraum",
-            "waiting": "Warte auf Daten…", "bmsBle": "BMS über BLE", "settings": "Einstellungen…", "quit": "Beenden", "history": "Marstek — Ladeverlauf",
-            "mode": "Aktueller Modus", "workMode": "Betriebsmodus", "autoMode": "Eigenverbrauch", "aiMode": "AI-Optimierung", "manualMode": "Manuell", "passiveMode": "Passiv", "upsMode": "UPS", "manualPower": "Manual-Leistung, W (− Laden / + Entladen)", "upsPower": "UPS-Ladeleistung: 100–2500 W", "upsHint": "In der Marstek-App ändern. Über die Open API nicht verfügbar.", "aiHint": "AI-Optimierung ist aktiviert.",
-            "dod": "Maximale Entladetiefe (DOD), %", "dodHint": "88% = bis zu 88% nutzen; Reserve ≈ 12%", "ip": "Marstek-IP-Adresse", "led": "LED am Gerät",
-            "settingsTitle": "Marstek-Einstellungen", "settingsInfo": "DOD ist der Anteil der Akkukapazität, der genutzt werden darf.", "apply": "Anwenden", "cancel": "Abbrechen", "save": "Speichern", "language": "Sprache",
-            "english": "Englisch", "ukrainian": "Ukrainisch", "german": "Deutsch", "temperature": "Temperatur", "capacity": "Kapazität", "grid": "Netz", "load": "Last", "autoSearch": "Automatisch suchen", "searching": "Suche…", "found": "Gefunden", "chooseStation": "Station auswählen",
-            "scanTitle": "Marstek-BLE-Diagnose", "scanInfo": "Suche nach der Station und lese BMS-Daten. Dies kann bis zu 10 Sekunden dauern.", "bmsTitle": "Marstek BMS",
-            "bmsVersion": "BMS-Version", "voltage": "Spannung", "current": "Strom", "bmsCapacity": "Kapazität", "bmsTemperature": "BMS-Temperatur", "mosfet": "MOSFET",
-            "noErrors": "Keine Fehler", "error": "Fehler", "warning": "Warnung", "cells": "Zellen", "bluetoothOn": "Schalte Bluetooth auf dem Mac ein.",
-            "bluetoothPermission": "Erlaube Marstek Widget den Bluetooth-Zugriff unter Systemeinstellungen → Datenschutz & Sicherheit → Bluetooth.", "bleUnsupported": "Dieser Mac unterstützt Bluetooth Low Energy nicht.",
-            "notFound": "Marstek wurde nicht gefunden. Gehe näher an die Station.", "bleBusy": "Ein BLE-Scan läuft bereits.", "bleChars": "Marstek-BLE-Eigenschaften wurden nicht gefunden.",
-            "bmsIncomplete": "Die BMS-Antwort ist unvollständig.", "runtimeIncomplete": "Die Laufzeitantwort ist unvollständig.", "bleTimeout": "Der BLE-Befehl hat nicht geantwortet.",
-            "openApiInfo": "Die Open API muss in der Marstek-App aktiviert sein.", "dodRange": "DOD muss zwischen 30 und 88% liegen.", "manualPowerRange": "Die Manual-Leistung muss zwischen −5000 und 5000 W liegen.", "settingsPartial": "Nicht alle Einstellungen wurden angewendet", "settingsPartialInfo": "UPS wurde nicht umgeschaltet. Siehe /tmp/marstek-widget.log für Details.", "modeNotConfirmed": "Der Modus wurde von der Station nicht bestätigt", "modeNotConfirmedInfo": "Die Station wechselte nicht zu %@. DOD und LED wurden nicht geändert. Siehe /tmp/marstek-widget.log."
-        ]
-    ]
-    return values[language()]?[key] ?? values[.english]?[key] ?? key
 }
 
 private func localizedState(_ state: String) -> String {
@@ -117,6 +64,7 @@ final class MarstekBLEClient: NSObject, CBCentralManagerDelegate, CBPeripheralDe
     private var pending: [(UInt8, ([UInt8]) -> Void)] = []
     private var completion: ((Result<BLEDiagnostics, Error>) -> Void)?
     private var timeoutWork: DispatchWorkItem?
+    private var operationTimeoutWork: DispatchWorkItem?
     private var scanStarted = false
 
     override init() {
@@ -127,7 +75,24 @@ final class MarstekBLEClient: NSObject, CBCentralManagerDelegate, CBPeripheralDe
     func readDiagnostics(completion: @escaping (Result<BLEDiagnostics, Error>) -> Void) {
         guard self.completion == nil else { completion(.failure(NSError(domain: "Marstek BLE", code: 2, userInfo: [NSLocalizedDescriptionKey: L("bleBusy")] ))); return }
         self.completion = completion
+        let work = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            let message: String
+            switch self.central.state {
+            case .poweredOff: message = L("bluetoothOn")
+            case .unauthorized: message = L("bluetoothPermission")
+            default: message = L("bleTimeout")
+            }
+            self.finish(.failure(NSError(domain: "Marstek BLE", code: 10, userInfo: [NSLocalizedDescriptionKey: message])))
+        }
+        operationTimeoutWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 20, execute: work)
         startScanIfReady()
+    }
+
+    func cancel() {
+        guard completion != nil else { return }
+        finish(.failure(NSError(domain: NSCocoaErrorDomain, code: NSUserCancelledError)))
     }
 
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
@@ -135,9 +100,11 @@ final class MarstekBLEClient: NSObject, CBCentralManagerDelegate, CBPeripheralDe
         if central.state == .poweredOn {
             startScanIfReady()
         } else if central.state == .poweredOff {
-            finish(.failure(NSError(domain: "Marstek BLE", code: 1, userInfo: [NSLocalizedDescriptionKey: L("bluetoothOn")])))
+            // Keep the pending request alive so enabling Bluetooth continues
+            // the same user action without requiring a second click.
         } else if central.state == .unauthorized {
-            finish(.failure(NSError(domain: "Marstek BLE", code: 11, userInfo: [NSLocalizedDescriptionKey: L("bluetoothPermission")])))
+            // macOS may deliver .poweredOn after the user grants the first-use
+            // permission. The overall timeout reports a denial if it stays so.
         } else if central.state == .unsupported {
             finish(.failure(NSError(domain: "Marstek BLE", code: 12, userInfo: [NSLocalizedDescriptionKey: L("bleUnsupported")])))
         }
@@ -267,10 +234,11 @@ final class MarstekBLEClient: NSObject, CBCentralManagerDelegate, CBPeripheralDe
 
     private func finish(_ result: Result<BLEDiagnostics, Error>) {
         timeoutWork?.cancel(); timeoutWork = nil
+        operationTimeoutWork?.cancel(); operationTimeoutWork = nil
         central.stopScan()
         if let peripheral, let rx { peripheral.setNotifyValue(false, for: rx) }
         if let peripheral { central.cancelPeripheralConnection(peripheral) }
-        let callback = completion; completion = nil; self.peripheral = nil; tx = nil; rx = nil; pending.removeAll(); responseBuffer.removeAll(); bms = nil; runtime = nil
+        let callback = completion; completion = nil; self.peripheral = nil; tx = nil; rx = nil; pending.removeAll(); responseBuffer.removeAll(); bms = nil; runtime = nil; scanStarted = false
         callback?(result)
     }
 }
@@ -520,9 +488,10 @@ final class GraphPanel: NSView {
     func update(_ samples: [HistorySample]) { graph.samples = samples }
 
     func updateLocalization() {
+        let selectedRange = selector.indexOfSelectedItem
         selector.removeAllItems()
         selector.addItems(withTitles: [L("lastHour"), L("last6"), L("last24"), L("last7")])
-        selector.selectItem(at: 2)
+        selector.selectItem(at: (0..<selector.numberOfItems).contains(selectedRange) ? selectedRange : 2)
         bleButton.title = L("bmsBle")
         settingsButton.title = L("settings")
         quitButton.title = L("quit")
@@ -532,7 +501,11 @@ final class GraphPanel: NSView {
 
     func update(_ reading: BatteryReading, samples: [HistorySample]) {
         graph.samples = samples
-        let mode = localizedMode(reading.mode ?? "UPS")
+        var mode = reading.mode.map(localizedMode) ?? "—"
+        if MarstekAppLogic.canonicalMode(reading.mode) == "Manual",
+           let manualPower = UserDefaults.standard.object(forKey: "marstekManualPower") as? NSNumber {
+            mode += " " + MarstekAppLogic.signedPower(manualPower.intValue)
+        }
         let temperature = reading.temperature.map { String(format: "%.1f°C", $0) } ?? "—"
         let capacity = reading.capacityWh.map { String(format: "%.2f kWh", $0 / 1000) } ?? "—"
         let ratedCapacity = reading.ratedCapacityWh.map { String(format: "%.2f kWh", $0 / 1000) } ?? "—"
@@ -544,10 +517,15 @@ final class GraphPanel: NSView {
         if let grid = reading.gridPower, abs(grid) > 0.5 { currentPower.append("\(gridLabel): \(Int(grid.rounded())) W") }
         if let offgrid = reading.offgridPower, abs(offgrid) > 0.5 { currentPower.append("\(loadLabel): \(Int(offgrid.rounded())) W") }
         let currentPowerText = currentPower.isEmpty ? "" : " · " + currentPower.joined(separator: " · ")
-        detailsLabel.stringValue = "\(mode) · \(Int(reading.soc.rounded()))% · \(localizedState(reading.state.rawValue)) · \(Int(reading.watts.rounded())) W\n\(temperatureLabel): \(temperature) · \(capacityLabel): \(capacity) / \(ratedCapacity)\(currentPowerText)"
+        let batteryPowerText = reading.state == .idle || reading.watts <= 0.5
+            ? ""
+            : " · \(Int(reading.watts.rounded())) W"
+        detailsLabel.stringValue = "\(mode) · \(Int(reading.soc.rounded()))% · \(localizedState(reading.state.rawValue))\(batteryPowerText)\n\(temperatureLabel): \(temperature) · \(capacityLabel): \(capacity) / \(ratedCapacity)\(currentPowerText)"
     }
 
-    @objc private func rangeChanged() { graph.hours = [1.0, 6.0, 24.0, 24.0 * 7.0][selector.indexOfSelectedItem] }
+    @objc private func rangeChanged() {
+        graph.hours = [1.0, 6.0, 24.0, 24.0 * 7.0][safe: selector.indexOfSelectedItem] ?? 24
+    }
     @objc private func bleClicked() { onBLE?() }
     @objc private func settingsClicked() { onSettings?() }
     @objc private func quitClicked() { onQuit?() }
@@ -565,72 +543,137 @@ final class MarstekClient {
 
     init(host: String) { self.host = host }
 
+    private func performRequest(
+        _ method: String,
+        params: [String: Any] = ["id": 0],
+        timeoutMilliseconds: Int,
+        logRequest: Bool = false
+    ) -> [String: Any]? {
+        let fd = socket(AF_INET, SOCK_DGRAM, 0)
+        guard fd >= 0 else { return nil }
+        defer { close(fd) }
+        var noSigPipe: Int32 = 1
+        setsockopt(
+            fd,
+            SOL_SOCKET,
+            SO_NOSIGPIPE,
+            &noSigPipe,
+            socklen_t(MemoryLayout<Int32>.size)
+        )
+
+        var address = sockaddr_in()
+        address.sin_len = UInt8(MemoryLayout<sockaddr_in>.size)
+        address.sin_family = sa_family_t(AF_INET)
+        address.sin_port = port.bigEndian
+        guard host.withCString({ inet_pton(AF_INET, $0, &address.sin_addr) }) == 1 else { return nil }
+        let connected = withUnsafePointer(to: &address) { pointer in
+            pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) {
+                Darwin.connect(fd, $0, socklen_t(MemoryLayout<sockaddr_in>.size))
+            }
+        }
+        guard connected == 0 else { return nil }
+
+        requestID = (requestID % 99999) + 1
+        let expectedID = requestID
+        let payload: [String: Any] = ["id": expectedID, "method": method, "params": params]
+        guard let data = try? JSONSerialization.data(withJSONObject: payload) else { return nil }
+        if logRequest, let json = String(data: data, encoding: .utf8) {
+            Self.log("\(method): request=\(json)")
+        }
+        let sent = data.withUnsafeBytes { bytes in
+            Darwin.send(fd, bytes.baseAddress, data.count, 0)
+        }
+        guard sent == data.count else { return nil }
+
+        let deadline = Date().addingTimeInterval(Double(timeoutMilliseconds) / 1000)
+        var buffer = [UInt8](repeating: 0, count: 4096)
+        while true {
+            let remainingMilliseconds = Int((deadline.timeIntervalSinceNow * 1000).rounded(.up))
+            guard remainingMilliseconds > 0 else { return nil }
+            var timeout = timeval(
+                tv_sec: remainingMilliseconds / 1000,
+                tv_usec: Int32((remainingMilliseconds % 1000) * 1000)
+            )
+            setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, socklen_t(MemoryLayout<timeval>.size))
+            let received = recv(fd, &buffer, buffer.count, 0)
+            guard received > 0,
+                  let response = try? JSONSerialization.jsonObject(with: Data(buffer[0..<received])) as? [String: Any] else {
+                return nil
+            }
+            guard MarstekAppLogic.responseIDMatches(response: response, expectedID: expectedID) else {
+                Self.log("\(method): ignored response with mismatched id")
+                continue
+            }
+            return response
+        }
+    }
+
+    private func requestResult(
+        _ method: String,
+        params: [String: Any] = ["id": 0],
+        timeoutMilliseconds: Int
+    ) -> [String: Any]? {
+        guard let response = performRequest(method, params: params, timeoutMilliseconds: timeoutMilliseconds),
+              response["error"] == nil,
+              let result = response["result"] as? [String: Any] else {
+            return nil
+        }
+        return result
+    }
+
+    private func readMode(completion: @escaping (String?) -> Void) {
+        queue.async {
+            var reportedMode: String?
+            for attempt in 1...3 {
+                let result = self.requestResult("ES.GetMode", timeoutMilliseconds: 4_000)
+                reportedMode = MarstekAppLogic.canonicalMode(result?["mode"] as? String)
+                if reportedMode != nil { break }
+                if attempt < 3 { usleep(1_000_000) }
+            }
+            DispatchQueue.main.async { completion(reportedMode) }
+        }
+    }
+
     func read(completion: @escaping (Result<BatteryReading, Error>) -> Void) {
         queue.async {
-            let fd = socket(AF_INET, SOCK_DGRAM, 0)
-            guard fd >= 0 else { DispatchQueue.main.async { completion(.failure(NSError(domain: "Marstek", code: 10))) }; return }
-            defer { close(fd) }
-            var timeout = timeval(tv_sec: 4, tv_usec: 0)
-            setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, socklen_t(MemoryLayout<timeval>.size))
-            var address = sockaddr_in()
-            address.sin_len = UInt8(MemoryLayout<sockaddr_in>.size)
-            address.sin_family = sa_family_t(AF_INET)
-            address.sin_port = self.port.bigEndian
-            guard self.host.withCString({ inet_pton(AF_INET, $0, &address.sin_addr) }) == 1 else {
-                DispatchQueue.main.async { completion(.failure(NSError(domain: "Marstek", code: 11))) }; return
-            }
-
-            func request(_ method: String, timeoutMilliseconds: Int = 600) -> [String: Any]? {
-                timeout = timeval(tv_sec: timeoutMilliseconds / 1000, tv_usec: Int32((timeoutMilliseconds % 1000) * 1000))
-                setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, socklen_t(MemoryLayout<timeval>.size))
-                self.requestID = (self.requestID % 99999) + 1
-                let id = self.requestID
-                let payload: [String: Any] = ["id": id, "method": method, "params": ["id": 0]]
-                guard let data = try? JSONSerialization.data(withJSONObject: payload) else { return nil }
-                let sent = data.withUnsafeBytes { bytes in
-                    withUnsafePointer(to: &address) { pointer in
-                        pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) {
-                            sendto(fd, bytes.baseAddress, data.count, 0, $0, socklen_t(MemoryLayout<sockaddr_in>.size))
-                        }
-                    }
-                }
-                guard sent == data.count else { return nil }
-                var buffer = [UInt8](repeating: 0, count: 4096)
-            let received = recv(fd, &buffer, buffer.count, 0)
-                guard received > 0 else { return nil }
-                // The device returns the matching response on this fresh socket.
-                // Do not reject it because of NSNumber/Int bridging differences.
-                guard let object = try? JSONSerialization.jsonObject(with: Data(buffer[0..<received])) as? [String: Any],
-                      let result = object["result"] as? [String: Any] else { return nil }
-                return result
-            }
-
             // Requests are deliberately sequential: Marstek firmware may drop
             // packets when Bat.GetStatus and ES.GetStatus arrive together.
-            var battery = request("Bat.GetStatus", timeoutMilliseconds: 2000)
+            var battery = self.requestResult("Bat.GetStatus", timeoutMilliseconds: 2_000)
             if battery == nil {
                 Self.log("Bat.GetStatus: retrying")
-                usleep(250_000)
-                battery = request("Bat.GetStatus", timeoutMilliseconds: 1000)
+                usleep(450_000)
+                battery = self.requestResult("Bat.GetStatus", timeoutMilliseconds: 1_200)
             }
-            guard let battery else {
+            if battery == nil {
                 Self.log("Bat.GetStatus: failed after retry")
-                DispatchQueue.main.async { completion(.failure(NSError(domain: "Marstek", code: 1))) }
-                return
             }
-            // Venus firmware needs a short gap between telemetry datagrams.
-            usleep(500_000)
-            // SOC must not be blocked by a slow or missing ES.GetStatus packet.
-            let baseReading = Self.makeReading(battery: battery, energy: [:], mode: nil, wifi: nil, meter: nil)
-            let energy = request("ES.GetStatus") ?? [:]
-            usleep(150_000)
-            let mode = request("ES.GetMode") ?? [:]
+
+            // Venus firmware needs a visible gap between every datagram.
+            usleep(450_000)
+            var mode: [String: Any] = [:]
+            for attempt in 1...3 {
+                if let result = self.requestResult("ES.GetMode", timeoutMilliseconds: 4_000) {
+                    mode = result
+                    break
+                }
+                if attempt < 3 {
+                    Self.log("ES.GetMode: retrying")
+                    usleep(1_000_000)
+                }
+            }
             Self.log("ES.GetMode: result=\(mode)")
-            usleep(150_000)
-            let wifi = request("Wifi.GetStatus") ?? [:]
-            usleep(150_000)
-            let meter = request("EM.GetStatus") ?? [:]
-            guard let reading = Self.makeReading(battery: battery, energy: energy, mode: mode, wifi: wifi, meter: meter) ?? baseReading else {
+            usleep(450_000)
+            let energy = self.requestResult("ES.GetStatus", timeoutMilliseconds: 1_800) ?? [:]
+
+            // Mode and energy both expose bat_soc on current firmware, so a
+            // temporary Bat.GetStatus loss must not blank the menu-bar SOC.
+            guard let reading = Self.makeReading(
+                battery: battery ?? [:],
+                energy: energy,
+                mode: mode,
+                wifi: nil,
+                meter: nil
+            ) else {
                 Self.log("telemetry: no SOC")
                 DispatchQueue.main.async { completion(.failure(NSError(domain: "Marstek", code: 1))) }
                 return
@@ -657,7 +700,8 @@ final class MarstekClient {
             address.sin_port = self.port.bigEndian
             address.sin_addr.s_addr = inet_addr("255.255.255.255")
             self.requestID = (self.requestID % 99999) + 1
-            let payload: [String: Any] = ["id": self.requestID, "method": "Marstek.GetDevice", "params": ["ble_mac": "0"]]
+            let expectedID = self.requestID
+            let payload: [String: Any] = ["id": expectedID, "method": "Marstek.GetDevice", "params": ["ble_mac": "0"]]
             guard let data = try? JSONSerialization.data(withJSONObject: payload) else { DispatchQueue.main.async { completion([]) }; return }
             let sent = data.withUnsafeBytes { bytes in
                 withUnsafePointer(to: &address) { pointer in
@@ -673,48 +717,12 @@ final class MarstekClient {
                 let received = recv(fd, &buffer, buffer.count, 0)
                 guard received > 0 else { break }
                 guard let object = try? JSONSerialization.jsonObject(with: Data(buffer[0..<received])) as? [String: Any],
+                      MarstekAppLogic.responseIDMatches(response: object, expectedID: expectedID),
                       let result = object["result"] as? [String: Any] else { continue }
                 let ip = (result["ip"] as? String) ?? (result["sta_ip"] as? String)
                 if let ip, !ip.isEmpty, !found.contains(ip) { found.append(ip) }
             }
             DispatchQueue.main.async { completion(found) }
-        }
-    }
-
-    func setPassivePower(_ power: Int, completion: @escaping (Bool) -> Void) {
-        queue.async {
-            let fd = socket(AF_INET, SOCK_DGRAM, 0)
-            guard fd >= 0 else { DispatchQueue.main.async { completion(false) }; return }
-            defer { close(fd) }
-            var timeout = timeval(tv_sec: 4, tv_usec: 0)
-            setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, socklen_t(MemoryLayout<timeval>.size))
-            var address = sockaddr_in()
-            address.sin_len = UInt8(MemoryLayout<sockaddr_in>.size)
-            address.sin_family = sa_family_t(AF_INET)
-            address.sin_port = self.port.bigEndian
-            guard self.host.withCString({ inet_pton(AF_INET, $0, &address.sin_addr) }) == 1 else {
-                DispatchQueue.main.async { completion(false) }; return
-            }
-            self.requestID = (self.requestID % 99999) + 1
-            let payload: [String: Any] = [
-                "id": self.requestID,
-                "method": "ES.SetMode",
-                "params": ["id": 0, "config": ["mode": "Passive", "passive_cfg": ["power": power, "cd_time": 3600]]]
-            ]
-            guard let data = try? JSONSerialization.data(withJSONObject: payload) else { DispatchQueue.main.async { completion(false) }; return }
-            let sent = data.withUnsafeBytes { bytes in
-                withUnsafePointer(to: &address) { pointer in
-                    pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) {
-                        sendto(fd, bytes.baseAddress, data.count, 0, $0, socklen_t(MemoryLayout<sockaddr_in>.size))
-                    }
-                }
-            }
-            guard sent == data.count else { DispatchQueue.main.async { completion(false) }; return }
-            var buffer = [UInt8](repeating: 0, count: 4096)
-            let received = recv(fd, &buffer, buffer.count, 0)
-            let response = received > 0 ? (try? JSONSerialization.jsonObject(with: Data(buffer[0..<received])) as? [String: Any]) : nil
-            let success = response?["error"] == nil && response?["result"] != nil
-            DispatchQueue.main.async { completion(success) }
         }
     }
 
@@ -730,7 +738,6 @@ final class MarstekClient {
         if mode == "Auto" { config["auto_cfg"] = ["enable": 1] }
         else if mode == "AI" { config["ai_cfg"] = ["enable": 1] }
         else if mode == "UPS" { config["ups_cfg"] = ["enable": 1] }
-        else if mode == "Passive" { config["passive_cfg"] = ["power": power, "cd_time": 3600] }
         // Venus E expects the active schedule in slot 0 and HH:mm values.
         // Slot 9 is reserved for the disabled placeholder used when clearing
         // schedules; sending the real schedule there can leave the device in UPS.
@@ -751,15 +758,19 @@ final class MarstekClient {
                 ]
             ]
         ]
-        let verifyAndRetry: (@escaping (Bool) -> Void) -> Void = { [weak self] done in
+        let verifyMode: (@escaping (Bool) -> Void) -> Void = { [weak self] done in
             guard let self else { done(false); return }
-            self.read { result in
-                if case .success(let reading) = result,
-                   reading.mode?.caseInsensitiveCompare(mode) == .orderedSame {
+            self.readMode { reportedMode in
+                guard let reportedMode else {
+                    Self.log("ES.SetMode: verification failed, no readable mode")
+                    done(false)
+                    return
+                }
+                if reportedMode.caseInsensitiveCompare(mode) == .orderedSame {
                     Self.log("ES.SetMode: verified mode=\(mode)")
                     done(true)
-                } else if mode == "Manual" {
-                    Self.log("ES.SetMode: Manual accepted; ES.GetMode reported UPS")
+                } else if mode == "Manual", reportedMode == "UPS" {
+                    Self.log("ES.SetMode: Manual acknowledged; ES.GetMode reported UPS (ACK_ONLY)")
                     done(true)
                 } else {
                     Self.log("ES.SetMode: verification failed, expected=\(mode)")
@@ -793,14 +804,12 @@ final class MarstekClient {
                 // The station may acknowledge ES.SetMode before ES.GetMode
                 // starts returning the new mode. Give firmware time to settle.
                 DispatchQueue.main.asyncAfter(deadline: .now() + 8) {
-                    verifyAndRetry { verified in
-                        if verified || attempt >= 3 {
-                            completion(verified)
-                        } else {
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
-                                sendActual(attempt: attempt + 1)
-                            }
-                        }
+                    verifyMode { verified in
+                        // A successful set_result means the write was accepted.
+                        // Never repeat that physical write merely because a
+                        // later read packet was lost; report verification
+                        // failure and let the user decide whether to retry.
+                        completion(verified)
                     }
                 }
             }
@@ -817,9 +826,12 @@ final class MarstekClient {
     }
 
     func setDOD(_ value: Int, completion: @escaping (Bool) -> Void) {
-        let clamped = max(30, min(88, value))
+        guard (30...88).contains(value) else {
+            DispatchQueue.main.async { completion(false) }
+            return
+        }
         func attempt(_ number: Int) {
-            sendCommand("DOD.SET", params: ["value": clamped]) { ok in
+            sendCommand("DOD.SET", params: ["value": value]) { ok in
                 if ok || number >= 3 {
                     completion(ok)
                 } else {
@@ -832,36 +844,17 @@ final class MarstekClient {
         attempt(1)
     }
 
-    func setLED(_ enabled: Bool, completion: @escaping (Bool) -> Void) {
-        sendCommand("Led.Ctrl", params: ["state": enabled ? 1 : 0], completion: completion)
-    }
-
-    func setBluetooth(_ enabled: Bool, completion: @escaping (Bool) -> Void) {
-        // Marstek API uses enable=0 for ON and enable=1 for OFF.
-        sendCommand("Ble.Adv", params: ["enable": enabled ? 0 : 1], completion: completion)
-    }
-
     private func sendCommand(_ method: String, params: [String: Any], completion: @escaping (Bool) -> Void) {
         queue.async {
-            let fd = socket(AF_INET, SOCK_DGRAM, 0)
-            guard fd >= 0 else { DispatchQueue.main.async { completion(false) }; return }
-            defer { close(fd) }
-            var timeout = timeval(tv_sec: 4, tv_usec: 0)
-            setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, socklen_t(MemoryLayout<timeval>.size))
-            var address = sockaddr_in(); address.sin_len = UInt8(MemoryLayout<sockaddr_in>.size); address.sin_family = sa_family_t(AF_INET); address.sin_port = self.port.bigEndian
-            guard self.host.withCString({ inet_pton(AF_INET, $0, &address.sin_addr) }) == 1 else { DispatchQueue.main.async { completion(false) }; return }
-            self.requestID = (self.requestID % 99999) + 1
-            let payload: [String: Any] = ["id": self.requestID, "method": method, "params": params]
-            guard let data = try? JSONSerialization.data(withJSONObject: payload) else { DispatchQueue.main.async { completion(false) }; return }
-            if let json = String(data: data, encoding: .utf8) {
-                Self.log("\(method): request=\(json)")
-            }
-            let sent = data.withUnsafeBytes { bytes in withUnsafePointer(to: &address) { pointer in pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) { sendto(fd, bytes.baseAddress, data.count, 0, $0, socklen_t(MemoryLayout<sockaddr_in>.size)) } } }
-            guard sent == data.count else { DispatchQueue.main.async { completion(false) }; return }
-            var buffer = [UInt8](repeating: 0, count: 4096)
-            let received = recv(fd, &buffer, buffer.count, 0)
-            let response = received > 0 ? (try? JSONSerialization.jsonObject(with: Data(buffer[0..<received])) as? [String: Any]) : nil
-            let success = response?["error"] == nil && response?["result"] != nil
+            let response = self.performRequest(
+                method,
+                params: params,
+                timeoutMilliseconds: 4_000,
+                logRequest: true
+            )
+            let success = method == "ES.SetMode" || method == "DOD.SET"
+                ? MarstekAppLogic.setResultSucceeded(response: response)
+                : response?["error"] == nil && response?["result"] != nil
             Self.log("\(method): \(success ? "ok" : "failed") response=\(String(describing: response))")
             DispatchQueue.main.async { completion(success) }
         }
@@ -874,14 +867,24 @@ final class MarstekClient {
     }
 
     private static func makeReading(battery: [String: Any], energy: [String: Any], mode: [String: Any]?, wifi: [String: Any]?, meter: [String: Any]?) -> BatteryReading? {
-        guard let soc = number(battery["soc"]) ?? number(energy["bat_soc"]) else { return nil }
-        let power = number(energy["bat_power"]) ?? 0
+        guard let soc = number(battery["soc"])
+                ?? number(energy["bat_soc"])
+                ?? number(mode?["bat_soc"]) else { return nil }
+        let power = MarstekAppLogic.normalizedSigned16(
+            number(energy["bat_power"]) ?? number(mode?["bat_power"])
+        ) ?? 0
         // Marstek convention: negative battery power charges, positive discharges.
-        let chargingAllowed = boolValue(battery["charg_flag"])
-        let dischargingAllowed = boolValue(battery["dischrg_flag"])
-        let charging = chargingAllowed && (power < -5 || (number(energy["ongrid_power"]) ?? 0) > 10)
-        let discharging = dischargingAllowed && power > 5
+        let chargingAllowed = optionalBoolValue(battery["charg_flag"])
+        let dischargingAllowed = optionalBoolValue(battery["dischrg_flag"])
+        let charging = power < -5 && (chargingAllowed ?? true)
+        let discharging = power > 5 && (dischargingAllowed ?? true)
         let state: BatteryReading.State = charging ? .charging : (discharging ? .discharging : .idle)
+        let gridPower = MarstekAppLogic.normalizedSigned16(
+            number(energy["ongrid_power"]) ?? number(mode?["ongrid_power"])
+        )
+        let offgridPower = MarstekAppLogic.normalizedSigned16(
+            number(energy["offgrid_power"]) ?? number(mode?["offgrid_power"])
+        )
         return BatteryReading(
             soc: max(0, min(100, soc)),
             state: state,
@@ -891,9 +894,9 @@ final class MarstekClient {
             temperature: number(battery["bat_temp"]),
             capacityWh: number(battery["bat_capacity"]) ?? number(energy["bat_cap"]),
             ratedCapacityWh: number(battery["rated_capacity"]),
-            solarPower: number(energy["pv_power"]),
-            gridPower: number(energy["ongrid_power"]),
-            offgridPower: number(energy["offgrid_power"]),
+            solarPower: MarstekAppLogic.normalizedSigned16(number(energy["pv_power"])),
+            gridPower: gridPower,
+            offgridPower: offgridPower,
             totalPVEnergyWh: number(energy["total_pv_energy"]),
             totalGridInputEnergyWh: number(energy["total_grid_input_energy"]),
             totalGridOutputEnergyWh: number(energy["total_grid_output_energy"]),
@@ -904,14 +907,32 @@ final class MarstekClient {
         )
     }
 
-    private static func boolValue(_ value: Any?) -> Bool {
+    private static func optionalBoolValue(_ value: Any?) -> Bool? {
         if let value = value as? Bool { return value }
         if let value = value as? NSNumber { return value.boolValue }
-        return false
+        return nil
     }
 }
 
-final class AppDelegate: NSObject, NSApplicationDelegate {
+private final class SettingsModalTarget: NSObject, NSWindowDelegate {
+    @objc func apply(_ sender: NSButton) {
+        NSApp.stopModal(withCode: .OK)
+        sender.window?.orderOut(nil)
+    }
+
+    @objc func cancel(_ sender: NSButton) {
+        NSApp.stopModal(withCode: .cancel)
+        sender.window?.orderOut(nil)
+    }
+
+    func windowWillClose(_ notification: Notification) {
+        if NSApp.modalWindow === notification.object as? NSWindow {
+            NSApp.stopModal(withCode: .cancel)
+        }
+    }
+}
+
+final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate {
     private var item: NSStatusItem!
     private var timer: Timer?
     private var client: MarstekClient!
@@ -928,15 +949,42 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private weak var settingsUpdateButton: NSButton?
     private weak var discoveredPopup: NSPopUpButton?
     private weak var settingsStatusLabel: NSTextField?
-    private weak var settingsAlert: NSAlert?
     private weak var settingsModePopup: NSPopUpButton?
-    private let settingsModeValues = ["Auto", "AI", "Manual", "UPS"]
+    private let settingsModeValues = MarstekAppLogic.supportedModes
     private weak var settingsManualLabel: NSTextField?
     private weak var settingsManualField: NSTextField?
     private weak var settingsUPSLabel: NSTextField?
     private weak var settingsUPSHint: NSTextField?
     private weak var settingsAIHint: NSTextField?
+    private weak var settingsDODField: NSTextField?
+    private weak var settingsDODHint: NSTextField?
+    private var lastKnownMode: String?
+    private var lastKnownModeHost: String?
+    // Manual ACK is intentionally session- and host-scoped. Firmware 148 may
+    // report raw UPS for an accepted Manual schedule, but a persisted override
+    // must never mask a later UPS selection or another physical station.
+    private var acknowledgedMode: String?
+    private var acknowledgedModeHost: String?
     private var host: String { UserDefaults.standard.string(forKey: "marstekHost") ?? "" }
+
+    private func dodDefaultsKey(for stationHost: String) -> String {
+        "marstekDOD.\(stationHost)"
+    }
+
+    private func storedDOD(for stationHost: String) -> Int? {
+        let defaults = UserDefaults.standard
+        if let value = defaults.object(forKey: dodDefaultsKey(for: stationHost)) as? NSNumber,
+           (30...88).contains(value.intValue) {
+            return value.intValue
+        }
+        // Migrate the value saved by older builds only for the same saved host.
+        if stationHost == host,
+           let legacy = defaults.object(forKey: "marstekDOD") as? NSNumber,
+           (30...88).contains(legacy.intValue) {
+            return legacy.intValue
+        }
+        return nil
+    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
@@ -944,6 +992,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         item.button?.target = self
         item.button?.action = #selector(openGraph)
         item.button?.title = "🔋 --%"
+        let savedHost = host
+        let defaults = UserDefaults.standard
+        let savedModeHost = defaults.string(forKey: "marstekLastKnownModeHost")
+        if let savedMode = MarstekAppLogic.storedMode(
+            savedMode: defaults.string(forKey: "marstekLastKnownMode"),
+            savedModeHost: savedModeHost,
+            selectedHost: savedHost
+        ) {
+            lastKnownMode = savedMode
+            lastKnownModeHost = savedHost
+            if savedModeHost != savedHost {
+                defaults.set(savedHost, forKey: "marstekLastKnownModeHost")
+            }
+        }
         // Always discover first. A previously saved IP is only a fallback
         // when the station is temporarily not answering broadcast discovery.
         client = MarstekClient(host: "")
@@ -953,34 +1015,61 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func discoverHostOnStartup() {
+        let savedHost = host
         client.discoverHost { [weak self] hosts in
             guard let self else { return }
-            if let discoveredHost = hosts.first {
-                MarstekClient.log("startup discovery: found=\(hosts.joined(separator: ",")) selected=\(discoveredHost)")
-                UserDefaults.standard.set(discoveredHost, forKey: "marstekHost")
-                self.client = MarstekClient(host: discoveredHost)
+            if let selectedHost = MarstekAppLogic.selectedHost(discoveredHosts: hosts, savedHost: savedHost) {
+                let discovered = hosts.contains(selectedHost)
+                MarstekClient.log("startup discovery: found=\(hosts.joined(separator: ",")) selected=\(selectedHost) source=\(discovered ? "discovery" : "fallback")")
+                if discovered { UserDefaults.standard.set(selectedHost, forKey: "marstekHost") }
+                self.useHost(selectedHost)
                 self.refresh()
-            } else if !self.host.isEmpty {
-                MarstekClient.log("startup discovery: no response, fallback=\(self.host)")
-                // Keep the last known address as a temporary fallback. The
-                // next launch will retry discovery before using it again.
-                self.client = MarstekClient(host: self.host)
-                self.refresh()
+            } else if hosts.count > 1 {
+                MarstekClient.log("startup discovery: multiple stations found; waiting for user selection: \(hosts.joined(separator: ","))")
             }
         }
     }
 
+    private func useHost(_ newHost: String) {
+        if client?.host != newHost {
+            acknowledgedMode = nil
+            acknowledgedModeHost = nil
+            if lastKnownModeHost != newHost {
+                lastKnownMode = nil
+                lastKnownModeHost = nil
+            }
+        }
+        client = MarstekClient(host: newHost)
+    }
+
     private func refresh() {
-        guard !host.isEmpty else { return }
+        guard !client.host.isEmpty else { return }
         client.read { [weak self] result in
             guard let self else { return }
             switch result {
             case .success(let value):
-                let preferredMode = UserDefaults.standard.string(forKey: "marstekMode")
-                let displayValue = (value.mode?.caseInsensitiveCompare("UPS") == .orderedSame &&
-                                    ["Manual", "Auto", "AI"].contains(preferredMode))
-                    ? value.withMode(preferredMode)
-                    : value
+                if let reportedMode = MarstekAppLogic.canonicalMode(value.mode) {
+                    self.lastKnownMode = reportedMode
+                    self.lastKnownModeHost = self.client.host
+                    UserDefaults.standard.set(reportedMode, forKey: "marstekLastKnownMode")
+                    UserDefaults.standard.set(self.client.host, forKey: "marstekLastKnownModeHost")
+                    if self.acknowledgedModeHost == self.client.host,
+                       reportedMode == self.acknowledgedMode || reportedMode != "UPS" {
+                        self.acknowledgedMode = nil
+                        self.acknowledgedModeHost = nil
+                    }
+                }
+                let displayMode = MarstekAppLogic.effectiveMode(
+                    reportedMode: value.mode,
+                    lastKnownMode: self.lastKnownModeHost == self.client.host ? self.lastKnownMode : nil,
+                    acknowledgedMode: self.acknowledgedModeHost == self.client.host ? self.acknowledgedMode : nil
+                )
+                if displayMode != MarstekAppLogic.canonicalMode(value.mode) {
+                    MarstekClient.log(
+                        "mode display: displayed=\(displayMode ?? "?") raw=\(value.mode ?? "?") acknowledged=\(self.acknowledgedMode ?? "?")"
+                    )
+                }
+                let displayValue = value.withMode(displayMode)
                 self.reading = displayValue
                 self.history.add(displayValue)
                 self.item.button?.title = "🔋 \(Int(displayValue.soc.rounded()))%"
@@ -1019,7 +1108,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         progress.informativeText = L("scanInfo")
         progress.addButton(withTitle: L("cancel"))
         if let window = graphController?.window {
-            progress.beginSheetModal(for: window) { _ in }
+            progress.beginSheetModal(for: window) { [weak self] _ in
+                self?.bleClient.cancel()
+            }
         } else {
             progress.runModal()
             return
@@ -1053,6 +1144,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     alert.messageText = "\(bmsTitle) — \(data.deviceName)"
                     alert.informativeText = "\(bmsVersionLabel): \(bmsVersion)\n\(voltageLabel): \(voltage) · \(currentLabel): \(current)\n\(capacityLabel): \(capacity)\n\(temperatureLabel): \(bmsTemperature) · \(mosfetLabel): \(mosfetTemperature)\n\(diagnosticsText)\n\(cellsLabel) (\(data.cellVoltages.count)):\n\(cells)"
                 case .failure(let error):
+                    let cocoaError = error as NSError
+                    if cocoaError.domain == NSCocoaErrorDomain,
+                       cocoaError.code == NSUserCancelledError {
+                        return
+                    }
                     alert.messageText = L("scanTitle")
                     alert.informativeText = error.localizedDescription
                 }
@@ -1066,7 +1162,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let alert = NSAlert(); alert.messageText = L("ip"); alert.informativeText = L("openApiInfo")
         let field = NSTextField(string: host); field.frame = NSRect(x: 0, y: 0, width: 260, height: 24); alert.accessoryView = field
         alert.addButton(withTitle: L("save")); alert.addButton(withTitle: L("cancel"))
-        if alert.runModal() == .alertFirstButtonReturn { UserDefaults.standard.set(field.stringValue, forKey: "marstekHost"); client = MarstekClient(host: field.stringValue); refresh() }
+        if alert.runModal() == .alertFirstButtonReturn {
+            let newHost = field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !newHost.isEmpty else { return }
+            UserDefaults.standard.set(newHost, forKey: "marstekHost")
+            useHost(newHost)
+            refresh()
+        }
     }
 
     @objc private func discoverIP() {
@@ -1076,11 +1178,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             guard let self else { return }
             self.settingsSearchButton?.title = L("autoSearch")
             self.settingsSearchButton?.isEnabled = true
-            if let host = hosts.first {
-                self.settingsHostField?.stringValue = host
+            if !hosts.isEmpty {
                 self.discoveredPopup?.removeAllItems()
                 self.discoveredPopup?.addItems(withTitles: hosts)
                 self.discoveredPopup?.isHidden = hosts.count < 2
+                let currentHost = self.settingsHostField?.stringValue ?? self.host
+                if let selectedHost = MarstekAppLogic.selectedHost(discoveredHosts: hosts, savedHost: currentHost),
+                   hosts.contains(selectedHost) {
+                    self.settingsHostField?.stringValue = selectedHost
+                    self.discoveredPopup?.selectItem(withTitle: selectedHost)
+                } else {
+                    self.discoveredPopup?.select(nil)
+                }
                 self.settingsStatusLabel?.stringValue = "\(L("found")): \(hosts.joined(separator: ", "))"
                 self.settingsStatusLabel?.isHidden = false
             } else {
@@ -1095,8 +1204,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func modeChanged() {
-        let selectedIndex = settingsModePopup?.indexOfSelectedItem ?? 3
-        let selected = settingsModeValues[safe: selectedIndex] ?? "UPS"
+        guard let selectedIndex = settingsModePopup?.indexOfSelectedItem,
+              let selected = settingsModeValues[safe: selectedIndex] else {
+            settingsManualLabel?.isHidden = true
+            settingsManualField?.isHidden = true
+            settingsUPSLabel?.isHidden = true
+            settingsUPSHint?.isHidden = true
+            settingsAIHint?.isHidden = true
+            return
+        }
         let manual = selected == "Manual"
         let ups = selected == "UPS"
         let ai = selected == "AI"
@@ -1107,21 +1223,47 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         settingsAIHint?.isHidden = !ai
     }
 
+    func controlTextDidChange(_ notification: Notification) {
+        guard notification.object as? NSTextField === settingsDODField else { return }
+        updateDODHint()
+    }
+
+    private func updateDODHint() {
+        guard let field = settingsDODField, let hint = settingsDODHint else { return }
+        let text = field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let value = Int(text), (30...88).contains(value) else {
+            hint.stringValue = L("dodRange")
+            hint.textColor = .systemRed
+            return
+        }
+        hint.stringValue = "\(String(format: L("dodHint"), value, value, 100 - value))\n\(L("dodReadUnavailable"))"
+        hint.textColor = .secondaryLabelColor
+    }
+
     private func openSettings() {
-        let currentMode = reading?.mode ?? "—"
+        let currentMode = MarstekAppLogic.effectiveMode(
+            reportedMode: reading?.mode,
+            lastKnownMode: lastKnownModeHost == client.host ? lastKnownMode : nil
+        )
         let modeLabel = NSTextField(labelWithString: L("workMode"))
         let modePopup = NSPopUpButton()
         modePopup.addItems(withTitles: settingsModeValues.map { localizedMode($0) })
-        modePopup.selectItem(at: settingsModeValues.firstIndex { $0.caseInsensitiveCompare(currentMode) == .orderedSame } ?? 0)
+        if let currentMode, let currentIndex = settingsModeValues.firstIndex(of: currentMode) {
+            modePopup.selectItem(at: currentIndex)
+        } else {
+            modePopup.select(nil)
+        }
         modePopup.target = self
         modePopup.action = #selector(modeChanged)
         settingsModePopup = modePopup
-        let isManual = currentMode.caseInsensitiveCompare("Manual") == .orderedSame
-        let isUPS = currentMode.caseInsensitiveCompare("UPS") == .orderedSame
-        let isAI = currentMode.caseInsensitiveCompare("AI") == .orderedSame
+        let isManual = currentMode == "Manual"
+        let isUPS = currentMode == "UPS"
+        let isAI = currentMode == "AI"
         let manualPowerLabel = NSTextField(labelWithString: L("manualPower"))
-        let storedManualPower = UserDefaults.standard.integer(forKey: "marstekManualPower")
-        let manualPowerField = NSTextField(string: String(storedManualPower == 0 ? 1000 : storedManualPower))
+        let storedManualPower = MarstekAppLogic.storedManualPower(
+            UserDefaults.standard.object(forKey: "marstekManualPower") as? NSNumber
+        )
+        let manualPowerField = NSTextField(string: String(storedManualPower))
         manualPowerLabel.isHidden = !isManual
         manualPowerField.isHidden = !isManual
         settingsManualLabel = manualPowerLabel
@@ -1138,6 +1280,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         settingsAIHint = aiHint
         upsPowerHint.textColor = .secondaryLabelColor
         upsPowerHint.preferredMaxLayoutWidth = 330
+        let initialDOD = storedDOD(for: host)
+        let initialDODText = initialDOD.map(String.init) ?? ""
+        let dodLabel = NSTextField(labelWithString: L("dod"))
+        let dodField = NSTextField(string: initialDODText)
+        dodField.placeholderString = "30…88"
+        dodField.delegate = self
+        let dodHint = NSTextField(wrappingLabelWithString: "")
+        dodHint.textColor = .secondaryLabelColor
+        dodHint.preferredMaxLayoutWidth = 460
+        settingsDODField = dodField
+        settingsDODHint = dodHint
+        updateDODHint()
         let hostLabel = NSTextField(labelWithString: L("ip"))
         let hostField = NSTextField(string: host)
         let searchButton = NSButton(title: L("autoSearch"), target: self, action: #selector(discoverIP))
@@ -1161,28 +1315,145 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let languagePopup = NSPopUpButton()
         languagePopup.addItems(withTitles: [L("english"), L("ukrainian"), L("german")])
         languagePopup.selectItem(at: [AppLanguage.english, .ukrainian, .german].firstIndex(of: language()) ?? 0)
-        let stack = NSStackView(views: [languageLabel, languagePopup, modeLabel, modePopup, manualPowerLabel, manualPowerField, upsPowerLabel, upsPowerHint, aiHint, hostLabel, hostField, searchButton, discovered, statusLabel, updateButton])
-        stack.orientation = .vertical; stack.spacing = 8; stack.alignment = .leading
-        stack.frame = NSRect(x: 0, y: 0, width: 340, height: 360)
 
-        let alert = NSAlert()
-        alert.messageText = L("settingsTitle")
-        alert.informativeText = ""
-        alert.accessoryView = stack
-        settingsAlert = alert
-        alert.addButton(withTitle: L("apply"))
-        alert.addButton(withTitle: L("cancel"))
-        guard alert.runModal() == .alertFirstButtonReturn else { return }
-        let selectedMode = settingsModeValues[safe: modePopup.indexOfSelectedItem] ?? "Auto"
+        func verticalGroup(_ views: [NSView], spacing: CGFloat = 6) -> NSStackView {
+            let group = NSStackView(views: views)
+            group.orientation = .vertical
+            group.alignment = .width
+            group.spacing = spacing
+            return group
+        }
+
+        func separator() -> NSBox {
+            let box = NSBox()
+            box.boxType = .separator
+            return box
+        }
+
+        [languagePopup, modePopup, manualPowerField, dodField, hostField].forEach {
+            $0.controlSize = .large
+        }
+        [searchButton, updateButton].forEach { $0.controlSize = .large }
+
+        let languageGroup = verticalGroup([languageLabel, languagePopup])
+        let modeGroup = verticalGroup([modeLabel, modePopup])
+        let topRow = NSStackView(views: [languageGroup, modeGroup])
+        topRow.orientation = .horizontal
+        topRow.alignment = .top
+        topRow.distribution = .fillEqually
+        topRow.spacing = 16
+
+        let modeControls = verticalGroup([
+            manualPowerLabel, manualPowerField,
+            upsPowerLabel, upsPowerHint,
+            aiHint
+        ])
+        let dodGroup = verticalGroup([dodLabel, dodField, dodHint])
+        let networkActions = NSStackView(views: [searchButton, updateButton])
+        networkActions.orientation = .horizontal
+        networkActions.alignment = .centerY
+        networkActions.spacing = 10
+        let networkGroup = verticalGroup([hostLabel, hostField, networkActions, discovered, statusLabel])
+
+        let iconView = NSImageView(image: NSApp.applicationIconImage)
+        iconView.imageScaling = .scaleProportionallyUpOrDown
+        iconView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            iconView.widthAnchor.constraint(equalToConstant: 64),
+            iconView.heightAnchor.constraint(equalToConstant: 64)
+        ])
+        let titleLabel = NSTextField(labelWithString: L("settingsTitle"))
+        titleLabel.font = .systemFont(ofSize: 22, weight: .bold)
+        let header = NSStackView(views: [iconView, titleLabel])
+        header.orientation = .horizontal
+        header.alignment = .centerY
+        header.spacing = 16
+
+        let cancelButton = NSButton(title: L("cancel"), target: nil, action: nil)
+        let applyButton = NSButton(title: L("apply"), target: nil, action: nil)
+        cancelButton.controlSize = .large
+        applyButton.controlSize = .large
+        applyButton.keyEquivalent = "\r"
+        cancelButton.keyEquivalent = "\u{1b}"
+        applyButton.bezelColor = .controlAccentColor
+        NSLayoutConstraint.activate([
+            cancelButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 120),
+            applyButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 120)
+        ])
+        let buttonSpacer = NSView()
+        buttonSpacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        let buttonRow = NSStackView(views: [buttonSpacer, cancelButton, applyButton])
+        buttonRow.orientation = .horizontal
+        buttonRow.alignment = .centerY
+        buttonRow.spacing = 10
+
+        let contentStack = NSStackView(views: [
+            header,
+            topRow,
+            modeControls,
+            separator(),
+            dodGroup,
+            separator(),
+            networkGroup,
+            buttonRow
+        ])
+        contentStack.orientation = .vertical
+        contentStack.alignment = .width
+        contentStack.spacing = 16
+        contentStack.translatesAutoresizingMaskIntoConstraints = false
+
+        let root = NSView()
+        root.addSubview(contentStack)
+        NSLayoutConstraint.activate([
+            contentStack.leadingAnchor.constraint(equalTo: root.leadingAnchor, constant: 28),
+            contentStack.trailingAnchor.constraint(equalTo: root.trailingAnchor, constant: -28),
+            contentStack.topAnchor.constraint(equalTo: root.topAnchor, constant: 28),
+            contentStack.bottomAnchor.constraint(lessThanOrEqualTo: root.bottomAnchor, constant: -24)
+        ])
+
+        let panel = NSPanel(
+            contentRect: NSRect(x: 0, y: 0, width: 520, height: 650),
+            styleMask: [.titled, .closable, .fullSizeContentView],
+            backing: .buffered,
+            defer: false
+        )
+        panel.title = L("settingsTitle")
+        panel.titleVisibility = .hidden
+        panel.titlebarAppearsTransparent = true
+        panel.isMovableByWindowBackground = true
+        panel.isReleasedWhenClosed = false
+        panel.contentView = root
+        panel.center()
+
+        let modalTarget = SettingsModalTarget()
+        applyButton.target = modalTarget
+        applyButton.action = #selector(SettingsModalTarget.apply(_:))
+        cancelButton.target = modalTarget
+        cancelButton.action = #selector(SettingsModalTarget.cancel(_:))
+        panel.delegate = modalTarget
+        panel.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+        let modalResponse = NSApp.runModal(for: panel)
+        panel.orderOut(nil)
+        guard modalResponse == .OK else { return }
+        let selectedMode = settingsModeValues[safe: modePopup.indexOfSelectedItem]
         let targetManual = selectedMode == "Manual"
         guard !targetManual || (Int(manualPowerField.stringValue).map { (-2500...2500).contains($0) } ?? false) else {
             let error = NSAlert(); error.messageText = L("manualPowerRange"); error.runModal(); return
         }
+        let dodText = dodField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        let dodWasEdited = dodText != initialDODText
+        let requestedDOD = dodWasEdited ? Int(dodText) : nil
+        guard !dodWasEdited || requestedDOD.map({ (30...88).contains($0) }) == true else {
+            let error = NSAlert(); error.messageText = L("dodRange"); error.runModal(); return
+        }
         let newHost = hostField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !newHost.isEmpty else { return }
         let manualPower = Int(manualPowerField.stringValue) ?? 1000
-        let oldManualPower = UserDefaults.standard.integer(forKey: "marstekManualPower") == 0 ? 1000 : UserDefaults.standard.integer(forKey: "marstekManualPower")
-        let modeChanged = selectedMode != currentMode
+        let oldManualPower = MarstekAppLogic.storedManualPower(
+            UserDefaults.standard.object(forKey: "marstekManualPower") as? NSNumber
+        )
+        let modeChanged = selectedMode.map { $0 != currentMode } ?? false
         let manualPowerChanged = targetManual && manualPower != oldManualPower
         UserDefaults.standard.set(newHost, forKey: "marstekHost")
         let selectedLanguage: AppLanguage = [.english, .ukrainian, .german][languagePopup.indexOfSelectedItem]
@@ -1191,24 +1462,44 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         graphPanel?.updateLocalization()
         if let reading { graphPanel?.update(reading, samples: history.samples) }
         graphController?.window?.title = L("history")
-        client = MarstekClient(host: newHost)
-        guard modeChanged || manualPowerChanged else { refresh(); return }
-        if modeChanged || manualPowerChanged {
+        useHost(newHost)
+        let applyDODAndRefresh: () -> Void = {
+            guard let requestedDOD else {
+                self.refresh()
+                return
+            }
+            self.client.setDOD(requestedDOD) { dodOK in
+                if dodOK {
+                    UserDefaults.standard.set(requestedDOD, forKey: self.dodDefaultsKey(for: newHost))
+                    UserDefaults.standard.set(requestedDOD, forKey: "marstekDOD")
+                } else {
+                    let error = NSAlert()
+                    error.messageText = L("dodNotConfirmed")
+                    error.informativeText = L("dodNotConfirmedInfo")
+                    error.runModal()
+                }
+                self.refresh()
+            }
+        }
+
+        guard modeChanged || manualPowerChanged else {
+            applyDODAndRefresh()
+            return
+        }
+        if let selectedMode, modeChanged || manualPowerChanged {
             client.setMode(selectedMode, power: manualPower) { modeOK in
-                guard modeOK else {
+                if modeOK {
+                    self.acknowledgedMode = selectedMode
+                    self.acknowledgedModeHost = newHost
+                    UserDefaults.standard.set(selectedMode, forKey: "marstekMode")
+                } else {
                     let error = NSAlert()
                     error.messageText = L("modeNotConfirmed")
                     error.informativeText = String(format: L("modeNotConfirmedInfo"), localizedMode(selectedMode))
                     error.runModal()
-                    self.refresh()
-                    return
                 }
-                UserDefaults.standard.set(selectedMode, forKey: "marstekMode")
-                self.refresh()
+                applyDODAndRefresh()
             }
-        } else {
-            UserDefaults.standard.set(selectedMode, forKey: "marstekMode")
-            refresh()
         }
     }
 

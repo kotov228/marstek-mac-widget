@@ -1,5 +1,6 @@
 .build/
-Marstek Widget.app/
+Marstek Widget.app
 .DS_Store
 .swiftpm/
-
+__pycache__/
+*.pyc

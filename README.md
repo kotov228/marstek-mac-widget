@@ -162,7 +162,9 @@ python3 -u Tests/test_mode_api.py \
 The live test covers all 12 directed transitions between Auto, AI, Manual, and
 UPS. On Venus E firmware 148, Manual commands may be acknowledged with
 `set_result = 1` while `ES.GetMode` still reports `UPS`; the test reports this
-explicitly as `ACK_ONLY`.
+explicitly as `ACK_ONLY`. For this exact firmware mismatch, the widget keeps
+the acknowledged `Manual` mode visible while retaining the raw `UPS` response
+in `/tmp/marstek-widget.log`; other reported modes are not overridden.
 
 ## 🤖 GitHub Actions and releases
 

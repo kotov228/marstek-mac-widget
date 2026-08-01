@@ -5,5 +5,9 @@ let package = Package(
     name: "MarstekMacWidget",
     platforms: [.macOS(.v13)],
     products: [.executable(name: "MarstekMacWidget", targets: ["MarstekMacWidget"])],
-    targets: [.executableTarget(name: "MarstekMacWidget")]
+    targets: [
+        .target(name: "MarstekCore"),
+        .executableTarget(name: "MarstekMacWidget", dependencies: ["MarstekCore"]),
+        .testTarget(name: "MarstekCoreTests", dependencies: ["MarstekCore"])
+    ]
 )
