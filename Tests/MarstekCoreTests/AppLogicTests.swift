@@ -81,6 +81,14 @@ final class AppLogicTests: XCTestCase {
             ),
             "Manual"
         )
+        XCTAssertEqual(
+            MarstekAppLogic.effectiveMode(
+                reportedMode: nil,
+                lastKnownMode: "UPS",
+                acknowledgedMode: "Manual"
+            ),
+            "Manual"
+        )
     }
 
     func testOtherAcknowledgedModesNeverMaskReportedUPS() {

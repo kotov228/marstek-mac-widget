@@ -13,12 +13,12 @@ public enum MarstekAppLogic {
         lastKnownMode: String?,
         acknowledgedMode: String? = nil
     ) -> String? {
-        let reported = canonicalMode(reportedMode)
+        let effectiveReported = canonicalMode(reportedMode) ?? canonicalMode(lastKnownMode)
         let acknowledged = canonicalMode(acknowledgedMode)
-        if reported == "UPS", acknowledged == "Manual" {
+        if effectiveReported == "UPS", acknowledged == "Manual" {
             return "Manual"
         }
-        return reported ?? canonicalMode(lastKnownMode)
+        return effectiveReported
     }
 
     public static func selectedHost(discoveredHosts: [String], savedHost: String) -> String? {

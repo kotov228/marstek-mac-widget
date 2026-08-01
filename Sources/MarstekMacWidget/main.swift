@@ -993,13 +993,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     self.lastKnownMode = reportedMode
                     UserDefaults.standard.set(reportedMode, forKey: "marstekLastKnownMode")
                 }
-                let displayValue = value.withMode(
-                    MarstekAppLogic.effectiveMode(
-                        reportedMode: value.mode,
-                        lastKnownMode: self.lastKnownMode,
-                        acknowledgedMode: self.acknowledgedMode
-                    )
+                let displayMode = MarstekAppLogic.effectiveMode(
+                    reportedMode: value.mode,
+                    lastKnownMode: self.lastKnownMode,
+                    acknowledgedMode: self.acknowledgedMode
                 )
+                if displayMode != MarstekAppLogic.canonicalMode(value.mode) {
+                    MarstekClient.log(
+                        "mode display: displayed=\(displayMode ?? "?") raw=\(value.mode ?? "?") acknowledged=\(self.acknowledgedMode ?? "?")"
+                    )
+                }
+                let displayValue = value.withMode(displayMode)
                 self.reading = displayValue
                 self.history.add(displayValue)
                 self.item.button?.title = "🔋 \(Int(displayValue.soc.rounded()))%"
