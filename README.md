@@ -233,6 +233,6 @@ git push origin v1.2.0
 
 ## 📄 License
 
-This project is provided as-is for local Marstek station monitoring and
-control. Use operating-mode controls carefully and verify changes in the
-official Marstek application.
+Released under the [MIT License](LICENSE). The project is provided as-is for
+local Marstek station monitoring and control. Use operating-mode controls
+carefully and verify changes in the official Marstek application.
