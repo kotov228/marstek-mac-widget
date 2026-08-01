@@ -2,6 +2,10 @@ import XCTest
 @testable import MarstekCore
 
 final class AppLogicTests: XCTestCase {
+    private let savedStation = "saved-station"
+    private let otherStation = "other-station"
+    private let replacementStation = "replacement-station"
+
     func testSetResultRequiresExplicitSuccess() {
         XCTAssertTrue(MarstekAppLogic.setResultSucceeded(response: ["result": ["set_result": 1]]))
         XCTAssertFalse(MarstekAppLogic.setResultSucceeded(response: ["result": ["set_result": 0]]))
@@ -13,27 +17,27 @@ final class AppLogicTests: XCTestCase {
     func testSavedStationWinsWhenSeveralStationsRespond() {
         XCTAssertEqual(
             MarstekAppLogic.selectedHost(
-                discoveredHosts: ["192.168.0.166", "192.168.0.165"],
-                savedHost: "192.168.0.165"
+                discoveredHosts: [otherStation, savedStation],
+                savedHost: savedStation
             ),
-            "192.168.0.165"
+            savedStation
         )
     }
 
     func testSingleStationCanReplaceAnOldAddress() {
         XCTAssertEqual(
             MarstekAppLogic.selectedHost(
-                discoveredHosts: ["192.168.0.200"],
-                savedHost: "192.168.0.165"
+                discoveredHosts: [replacementStation],
+                savedHost: savedStation
             ),
-            "192.168.0.200"
+            replacementStation
         )
     }
 
     func testSeveralUnknownStationsRequireUserSelection() {
         XCTAssertNil(
             MarstekAppLogic.selectedHost(
-                discoveredHosts: ["192.168.0.165", "192.168.0.166"],
+                discoveredHosts: [savedStation, otherStation],
                 savedHost: ""
             )
         )
@@ -41,8 +45,8 @@ final class AppLogicTests: XCTestCase {
 
     func testSavedAddressIsOnlyFallbackWhenDiscoveryIsEmpty() {
         XCTAssertEqual(
-            MarstekAppLogic.selectedHost(discoveredHosts: [], savedHost: "192.168.0.165"),
-            "192.168.0.165"
+            MarstekAppLogic.selectedHost(discoveredHosts: [], savedHost: savedStation),
+            savedStation
         )
     }
 
