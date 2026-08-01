@@ -948,6 +948,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         UserDefaults.standard.string(forKey: "marstekLastKnownMode")
             ?? UserDefaults.standard.string(forKey: "marstekMode")
     )
+    private var acknowledgedMode = MarstekAppLogic.canonicalMode(
+        UserDefaults.standard.string(forKey: "marstekMode")
+    )
     private var host: String { UserDefaults.standard.string(forKey: "marstekHost") ?? "" }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -993,7 +996,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 let displayValue = value.withMode(
                     MarstekAppLogic.effectiveMode(
                         reportedMode: value.mode,
-                        lastKnownMode: self.lastKnownMode
+                        lastKnownMode: self.lastKnownMode,
+                        acknowledgedMode: self.acknowledgedMode
                     )
                 )
                 self.reading = displayValue
@@ -1239,6 +1243,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     self.refresh()
                     return
                 }
+                self.acknowledgedMode = selectedMode
                 UserDefaults.standard.set(selectedMode, forKey: "marstekMode")
                 self.refresh()
             }

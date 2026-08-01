@@ -8,8 +8,17 @@ public enum MarstekAppLogic {
         return supportedModes.first { $0.caseInsensitiveCompare(value) == .orderedSame }
     }
 
-    public static func effectiveMode(reportedMode: String?, lastKnownMode: String?) -> String? {
-        canonicalMode(reportedMode) ?? canonicalMode(lastKnownMode)
+    public static func effectiveMode(
+        reportedMode: String?,
+        lastKnownMode: String?,
+        acknowledgedMode: String? = nil
+    ) -> String? {
+        let reported = canonicalMode(reportedMode)
+        let acknowledged = canonicalMode(acknowledgedMode)
+        if reported == "UPS", acknowledged == "Manual" {
+            return "Manual"
+        }
+        return reported ?? canonicalMode(lastKnownMode)
     }
 
     public static func selectedHost(discoveredHosts: [String], savedHost: String) -> String? {
