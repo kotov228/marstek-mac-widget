@@ -224,6 +224,13 @@ git push origin v1.2.0
 - `Tests/test_mode_api.py` — Local API payload and live transition tests.
 - `build-app.sh` — test, build, bundle, and ad-hoc signing script.
 
+## 🤝 Community
+
+- Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
+- Participation is governed by the [Code of Conduct](CODE_OF_CONDUCT.md).
+- Report vulnerabilities according to the [Security Policy](SECURITY.md), not
+  in a public issue.
+
 ## 📄 License
 
 This project is provided as-is for local Marstek station monitoring and

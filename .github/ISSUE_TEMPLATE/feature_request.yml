@@ -1,0 +1,39 @@
+name: Feature request
+description: Suggest an improvement to Marstek Mac Widget
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+      description: What is difficult or missing today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the behavior or UI you would like.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: dropdown
+    id: area
+    attributes:
+      label: Related area
+      options:
+        - Monitoring
+        - History graph
+        - Settings or Local API control
+        - Station discovery
+        - BLE / BMS diagnostics
+        - Localization
+        - Updates and releases
+        - Documentation
+        - Other
+    validations:
+      required: true
