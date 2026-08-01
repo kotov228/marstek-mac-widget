@@ -27,8 +27,6 @@ jobs:
   pull-request-build:
     if: github.event_name == 'pull_request'
     runs-on: macos-14
-    environment:
-      name: maintainer-approval
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
