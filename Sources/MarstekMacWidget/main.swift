@@ -2,6 +2,7 @@ import AppKit
 import CoreBluetooth
 import Foundation
 import Darwin
+import MarstekCore
 
 enum AppLanguage: String {
     case english = "en"
@@ -754,12 +755,17 @@ final class MarstekClient {
         let verifyAndRetry: (@escaping (Bool) -> Void) -> Void = { [weak self] done in
             guard let self else { done(false); return }
             self.read { result in
-                if case .success(let reading) = result,
-                   reading.mode?.caseInsensitiveCompare(mode) == .orderedSame {
+                guard case .success(let reading) = result,
+                      let reportedMode = MarstekAppLogic.canonicalMode(reading.mode) else {
+                    Self.log("ES.SetMode: verification failed, no readable mode")
+                    done(false)
+                    return
+                }
+                if reportedMode.caseInsensitiveCompare(mode) == .orderedSame {
                     Self.log("ES.SetMode: verified mode=\(mode)")
                     done(true)
-                } else if mode == "Manual" {
-                    Self.log("ES.SetMode: Manual accepted; ES.GetMode reported UPS")
+                } else if mode == "Manual", reportedMode == "UPS" {
+                    Self.log("ES.SetMode: Manual acknowledged; ES.GetMode reported UPS (ACK_ONLY)")
                     done(true)
                 } else {
                     Self.log("ES.SetMode: verification failed, expected=\(mode)")
@@ -861,7 +867,9 @@ final class MarstekClient {
             var buffer = [UInt8](repeating: 0, count: 4096)
             let received = recv(fd, &buffer, buffer.count, 0)
             let response = received > 0 ? (try? JSONSerialization.jsonObject(with: Data(buffer[0..<received])) as? [String: Any]) : nil
-            let success = response?["error"] == nil && response?["result"] != nil
+            let success = method == "ES.SetMode"
+                ? MarstekAppLogic.setResultSucceeded(response: response)
+                : response?["error"] == nil && response?["result"] != nil
             Self.log("\(method): \(success ? "ok" : "failed") response=\(String(describing: response))")
             DispatchQueue.main.async { completion(success) }
         }
@@ -930,7 +938,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private weak var settingsStatusLabel: NSTextField?
     private weak var settingsAlert: NSAlert?
     private weak var settingsModePopup: NSPopUpButton?
-    private let settingsModeValues = ["Auto", "AI", "Manual", "UPS"]
+    private let settingsModeValues = MarstekAppLogic.supportedModes
     private weak var settingsManualLabel: NSTextField?
     private weak var settingsManualField: NSTextField?
     private weak var settingsUPSLabel: NSTextField?
@@ -953,38 +961,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func discoverHostOnStartup() {
+        let savedHost = host
         client.discoverHost { [weak self] hosts in
             guard let self else { return }
-            if let discoveredHost = hosts.first {
-                MarstekClient.log("startup discovery: found=\(hosts.joined(separator: ",")) selected=\(discoveredHost)")
-                UserDefaults.standard.set(discoveredHost, forKey: "marstekHost")
-                self.client = MarstekClient(host: discoveredHost)
+            if let selectedHost = MarstekAppLogic.selectedHost(discoveredHosts: hosts, savedHost: savedHost) {
+                let discovered = hosts.contains(selectedHost)
+                MarstekClient.log("startup discovery: found=\(hosts.joined(separator: ",")) selected=\(selectedHost) source=\(discovered ? "discovery" : "fallback")")
+                if discovered { UserDefaults.standard.set(selectedHost, forKey: "marstekHost") }
+                self.client = MarstekClient(host: selectedHost)
                 self.refresh()
-            } else if !self.host.isEmpty {
-                MarstekClient.log("startup discovery: no response, fallback=\(self.host)")
-                // Keep the last known address as a temporary fallback. The
-                // next launch will retry discovery before using it again.
-                self.client = MarstekClient(host: self.host)
-                self.refresh()
+            } else if hosts.count > 1 {
+                MarstekClient.log("startup discovery: multiple stations found; waiting for user selection: \(hosts.joined(separator: ","))")
             }
         }
     }
 
     private func refresh() {
-        guard !host.isEmpty else { return }
+        guard !client.host.isEmpty else { return }
         client.read { [weak self] result in
             guard let self else { return }
             switch result {
             case .success(let value):
-                let preferredMode = UserDefaults.standard.string(forKey: "marstekMode")
-                let displayValue = (value.mode?.caseInsensitiveCompare("UPS") == .orderedSame &&
-                                    ["Manual", "Auto", "AI"].contains(preferredMode))
-                    ? value.withMode(preferredMode)
-                    : value
-                self.reading = displayValue
-                self.history.add(displayValue)
-                self.item.button?.title = "🔋 \(Int(displayValue.soc.rounded()))%"
-                self.graphPanel?.update(displayValue, samples: self.history.samples)
+                self.reading = value
+                self.history.add(value)
+                self.item.button?.title = "🔋 \(Int(value.soc.rounded()))%"
+                self.graphPanel?.update(value, samples: self.history.samples)
             case .failure:
                 // Keep the last good value visible during a temporary UDP loss.
                 if self.reading == nil { self.item.button?.title = "🔋 --%" }
@@ -1076,11 +1077,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             guard let self else { return }
             self.settingsSearchButton?.title = L("autoSearch")
             self.settingsSearchButton?.isEnabled = true
-            if let host = hosts.first {
-                self.settingsHostField?.stringValue = host
+            if !hosts.isEmpty {
                 self.discoveredPopup?.removeAllItems()
                 self.discoveredPopup?.addItems(withTitles: hosts)
                 self.discoveredPopup?.isHidden = hosts.count < 2
+                let currentHost = self.settingsHostField?.stringValue ?? self.host
+                if let selectedHost = MarstekAppLogic.selectedHost(discoveredHosts: hosts, savedHost: currentHost),
+                   hosts.contains(selectedHost) {
+                    self.settingsHostField?.stringValue = selectedHost
+                    self.discoveredPopup?.selectItem(withTitle: selectedHost)
+                } else {
+                    self.discoveredPopup?.select(nil)
+                }
                 self.settingsStatusLabel?.stringValue = "\(L("found")): \(hosts.joined(separator: ", "))"
                 self.settingsStatusLabel?.isHidden = false
             } else {
@@ -1095,8 +1103,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func modeChanged() {
-        let selectedIndex = settingsModePopup?.indexOfSelectedItem ?? 3
-        let selected = settingsModeValues[safe: selectedIndex] ?? "UPS"
+        guard let selectedIndex = settingsModePopup?.indexOfSelectedItem,
+              let selected = settingsModeValues[safe: selectedIndex] else {
+            settingsManualLabel?.isHidden = true
+            settingsManualField?.isHidden = true
+            settingsUPSLabel?.isHidden = true
+            settingsUPSHint?.isHidden = true
+            settingsAIHint?.isHidden = true
+            return
+        }
         let manual = selected == "Manual"
         let ups = selected == "UPS"
         let ai = selected == "AI"
@@ -1108,17 +1123,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func openSettings() {
-        let currentMode = reading?.mode ?? "—"
+        let currentMode = MarstekAppLogic.canonicalMode(reading?.mode)
         let modeLabel = NSTextField(labelWithString: L("workMode"))
         let modePopup = NSPopUpButton()
         modePopup.addItems(withTitles: settingsModeValues.map { localizedMode($0) })
-        modePopup.selectItem(at: settingsModeValues.firstIndex { $0.caseInsensitiveCompare(currentMode) == .orderedSame } ?? 0)
+        if let currentMode, let currentIndex = settingsModeValues.firstIndex(of: currentMode) {
+            modePopup.selectItem(at: currentIndex)
+        } else {
+            modePopup.select(nil)
+            modePopup.isEnabled = false
+        }
         modePopup.target = self
         modePopup.action = #selector(modeChanged)
         settingsModePopup = modePopup
-        let isManual = currentMode.caseInsensitiveCompare("Manual") == .orderedSame
-        let isUPS = currentMode.caseInsensitiveCompare("UPS") == .orderedSame
-        let isAI = currentMode.caseInsensitiveCompare("AI") == .orderedSame
+        let isManual = currentMode == "Manual"
+        let isUPS = currentMode == "UPS"
+        let isAI = currentMode == "AI"
         let manualPowerLabel = NSTextField(labelWithString: L("manualPower"))
         let storedManualPower = UserDefaults.standard.integer(forKey: "marstekManualPower")
         let manualPowerField = NSTextField(string: String(storedManualPower == 0 ? 1000 : storedManualPower))
@@ -1173,7 +1193,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         alert.addButton(withTitle: L("apply"))
         alert.addButton(withTitle: L("cancel"))
         guard alert.runModal() == .alertFirstButtonReturn else { return }
-        let selectedMode = settingsModeValues[safe: modePopup.indexOfSelectedItem] ?? "Auto"
+        let selectedMode = settingsModeValues[safe: modePopup.indexOfSelectedItem]
         let targetManual = selectedMode == "Manual"
         guard !targetManual || (Int(manualPowerField.stringValue).map { (-2500...2500).contains($0) } ?? false) else {
             let error = NSAlert(); error.messageText = L("manualPowerRange"); error.runModal(); return
@@ -1182,7 +1202,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard !newHost.isEmpty else { return }
         let manualPower = Int(manualPowerField.stringValue) ?? 1000
         let oldManualPower = UserDefaults.standard.integer(forKey: "marstekManualPower") == 0 ? 1000 : UserDefaults.standard.integer(forKey: "marstekManualPower")
-        let modeChanged = selectedMode != currentMode
+        let modeChanged = selectedMode.map { $0 != currentMode } ?? false
         let manualPowerChanged = targetManual && manualPower != oldManualPower
         UserDefaults.standard.set(newHost, forKey: "marstekHost")
         let selectedLanguage: AppLanguage = [.english, .ukrainian, .german][languagePopup.indexOfSelectedItem]
@@ -1193,7 +1213,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         graphController?.window?.title = L("history")
         client = MarstekClient(host: newHost)
         guard modeChanged || manualPowerChanged else { refresh(); return }
-        if modeChanged || manualPowerChanged {
+        if let selectedMode, modeChanged || manualPowerChanged {
             client.setMode(selectedMode, power: manualPower) { modeOK in
                 guard modeOK else {
                     let error = NSAlert()
@@ -1206,9 +1226,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 UserDefaults.standard.set(selectedMode, forKey: "marstekMode")
                 self.refresh()
             }
-        } else {
-            UserDefaults.standard.set(selectedMode, forKey: "marstekMode")
-            refresh()
         }
     }
 
