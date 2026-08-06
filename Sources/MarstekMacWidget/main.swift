@@ -50,6 +50,7 @@ struct BLEDiagnostics {
     let gridPower: Int?
     let batteryPower: Int?
     let deviceFirmware: Int?
+    let hmEvents: [MarstekHMEvent]
 }
 
 final class MarstekBLEClient: NSObject, CBCentralManagerDelegate, CBPeripheralDelegate {
@@ -86,7 +87,7 @@ final class MarstekBLEClient: NSObject, CBCentralManagerDelegate, CBPeripheralDe
             self.finish(.failure(NSError(domain: "Marstek BLE", code: 10, userInfo: [NSLocalizedDescriptionKey: message])))
         }
         operationTimeoutWork = work
-        DispatchQueue.main.asyncAfter(deadline: .now() + 20, execute: work)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 30, execute: work)
         startScanIfReady()
     }
 
@@ -166,7 +167,11 @@ final class MarstekBLEClient: NSObject, CBCentralManagerDelegate, CBPeripheralDe
 
     func peripheral(_ peripheral: CBPeripheral, didUpdateNotificationStateFor characteristic: CBCharacteristic, error: Error?) {
         guard error == nil, characteristic.uuid == rxUUID else { if let error { finish(.failure(error)) }; return }
-        pending = [(0x14, { [weak self] payload in self?.handleBMS(payload) }), (0x03, { [weak self] payload in self?.handleRuntime(payload) })]
+        pending = [
+            (0x14, { [weak self] payload in self?.handleBMS(payload) }),
+            (0x03, { [weak self] payload in self?.handleRuntime(payload) }),
+            (0x1C, { [weak self] payload in self?.handleHMEventLog(payload) })
+        ]
         sendNext()
     }
 
@@ -216,8 +221,17 @@ final class MarstekBLEClient: NSObject, CBCentralManagerDelegate, CBPeripheralDe
         guard p.count >= 15 else { finish(.failure(NSError(domain: "Marstek BLE", code: 9, userInfo: [NSLocalizedDescriptionKey: L("runtimeIncomplete")] ))); return }
         func i16(_ i: Int) -> Int { Int(Int16(bitPattern: UInt16(p[i]) | UInt16(p[i + 1]) << 8)) }
         runtime = (i16(0), i16(2), Int(p[12]) | Int(p[13]) << 8)
+        sendNext()
+    }
+
+    private func handleHMEventLog(_ p: [UInt8]) {
+        let events = MarstekDiagnostics.parseHMEvents(p)
+        guard !events.isEmpty else {
+            finish(.failure(NSError(domain: "Marstek BLE", code: 11, userInfo: [NSLocalizedDescriptionKey: L("hmHistoryIncomplete")])))
+            return
+        }
         let data = bms
-        let result = BLEDiagnostics(deviceName: peripheral?.name ?? "Marstek", bmsVersion: data?.0, batteryVoltage: data?.1, batteryCurrent: data?.2, stateOfHealth: data?.3, designCapacityWh: data?.4, bmsTemperature: data?.5, mosfetTemperature: data?.6, cellVoltages: data?.7 ?? [], errorCode: data?.8, warningCode: data?.9, runtimeMs: data?.10, gridPower: runtime?.0, batteryPower: runtime?.1, deviceFirmware: runtime?.2)
+        let result = BLEDiagnostics(deviceName: peripheral?.name ?? "Marstek", bmsVersion: data?.0, batteryVoltage: data?.1, batteryCurrent: data?.2, stateOfHealth: data?.3, designCapacityWh: data?.4, bmsTemperature: data?.5, mosfetTemperature: data?.6, cellVoltages: data?.7 ?? [], errorCode: data?.8, warningCode: data?.9, runtimeMs: data?.10, gridPower: runtime?.0, batteryPower: runtime?.1, deviceFirmware: runtime?.2, hmEvents: events)
         finish(.success(result))
     }
 
@@ -440,12 +454,28 @@ final class HistoryGraphView: NSView {
         guard !visible.isEmpty else { return }
         let start = cutoff.timeIntervalSinceReferenceDate
         let end = Date().timeIntervalSinceReferenceDate
-        let hit = visible.min { left, right in
-            let leftX = bounds.minX + bounds.width * CGFloat((left.date.timeIntervalSinceReferenceDate - start) / max(1, end - start))
-            let rightX = bounds.minX + bounds.width * CGFloat((right.date.timeIntervalSinceReferenceDate - start) / max(1, end - start))
-            return abs(leftX - location.x) < abs(rightX - location.x)
+        let point: (HistorySample) -> CGPoint = { sample in
+            CGPoint(
+                x: bounds.minX + bounds.width * CGFloat((sample.date.timeIntervalSinceReferenceDate - start) / max(1, end - start)),
+                y: bounds.minY + bounds.height * CGFloat(sample.soc / 100)
+            )
         }
-        if let hit { selected = hit; needsDisplay = true }
+        let hit = visible.min { left, right in
+            let leftPoint = point(left)
+            let rightPoint = point(right)
+            return hypot(leftPoint.x - location.x, leftPoint.y - location.y) < hypot(rightPoint.x - location.x, rightPoint.y - location.y)
+        }
+        if let hit {
+            let hitPoint = point(hit)
+            if hypot(hitPoint.x - location.x, hitPoint.y - location.y) <= 18 {
+                selected = hit
+            } else {
+                selected = nil
+            }
+        } else {
+            selected = nil
+        }
+        needsDisplay = true
     }
 }
 
@@ -1119,8 +1149,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate {
             DispatchQueue.main.async {
                 progress.window.sheetParent?.endSheet(progress.window)
                 let alert = NSAlert()
+                var historyEvents: [MarstekHMEvent]?
                 switch result {
                 case .success(let data):
+                    historyEvents = data.hmEvents
                     let cells = data.cellVoltages.enumerated().map { "\($0.offset + 1): " + String(format: "%.3f V", $0.element) }.joined(separator: "\n")
                     let bmsVersion = data.bmsVersion.map { String($0) } ?? "—"
                     let voltage = data.batteryVoltage.map { String(format: "%.2f V", $0) } ?? "—"
@@ -1142,7 +1174,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate {
                     let cellsLabel = L("cells")
                     let diagnosticsText = (data.errorCode == 0 && data.warningCode == 0) ? L("noErrors") : "\(errorLabel): \(errorCode) · \(warningLabel): \(warningCode)"
                     alert.messageText = "\(bmsTitle) — \(data.deviceName)"
-                    alert.informativeText = "\(bmsVersionLabel): \(bmsVersion)\n\(voltageLabel): \(voltage) · \(currentLabel): \(current)\n\(capacityLabel): \(capacity)\n\(temperatureLabel): \(bmsTemperature) · \(mosfetLabel): \(mosfetTemperature)\n\(diagnosticsText)\n\(cellsLabel) (\(data.cellVoltages.count)):\n\(cells)"
+                    let historyCount = String(format: L("errorHistoryCount"), data.hmEvents.count)
+                    alert.informativeText = "\(bmsVersionLabel): \(bmsVersion)\n\(voltageLabel): \(voltage) · \(currentLabel): \(current)\n\(capacityLabel): \(capacity)\n\(temperatureLabel): \(bmsTemperature) · \(mosfetLabel): \(mosfetTemperature)\n\(diagnosticsText)\n\(historyCount)\n\(cellsLabel) (\(data.cellVoltages.count)):\n\(cells)"
+                    alert.addButton(withTitle: L("ok"))
+                    alert.addButton(withTitle: L("errorHistory"))
                 case .failure(let error):
                     let cocoaError = error as NSError
                     if cocoaError.domain == NSCocoaErrorDomain,
@@ -1151,11 +1186,72 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate {
                     }
                     alert.messageText = L("scanTitle")
                     alert.informativeText = error.localizedDescription
+                    alert.addButton(withTitle: L("ok"))
                 }
-                alert.runModal()
-                _ = self
+                let response = alert.runModal()
+                if response == .alertSecondButtonReturn, let historyEvents {
+                    self?.showErrorHistory(historyEvents)
+                }
             }
         }
+    }
+
+    private func showErrorHistory(_ events: [MarstekHMEvent]) {
+        let sortedEvents = MarstekDiagnostics.sortedHMEventsNewestFirst(events)
+        let alert = NSAlert()
+        alert.messageText = L("errorHistoryTitle")
+        alert.informativeText = sortedEvents.isEmpty ? L("errorHistoryEmpty") : L("errorHistoryInfo")
+        alert.addButton(withTitle: L("ok"))
+
+        let body: String
+        if sortedEvents.isEmpty {
+            body = L("errorHistoryEmpty")
+        } else {
+            let eventHeading = String(format: L("errorHistoryEventsFormat"), sortedEvents.count)
+            let eventLines = sortedEvents.map { event -> String in
+                let timestamp = String(format: "%04d-%02d-%02d %02d:%02d", event.year, event.month, event.day, event.hour, event.minute)
+                let type = String(format: "0x%02X", event.type)
+                let code = MarstekDiagnostics.codeText(event.code)
+                let description: String
+                if let fault = MarstekDiagnostics.fault(for: event.code) {
+                    description = "\(L(fault.categoryKey)): \(L(fault.statusKey))"
+                } else {
+                    description = L("faultUnknown")
+                }
+                return String(format: L("errorHistoryEventFormat"), timestamp, type, code, description)
+            }.joined(separator: "\n")
+
+            var seenCodes = Set<Int>()
+            let recommendations = sortedEvents.compactMap { event -> String? in
+                guard let fault = MarstekDiagnostics.fault(for: event.code), seenCodes.insert(event.code).inserted else { return nil }
+                let title = "\(L(fault.categoryKey)): \(L(fault.statusKey))"
+                return String(format: L("errorHistoryRecommendationFormat"), MarstekDiagnostics.codeText(event.code), title, L(fault.treatmentKey))
+            }
+            let recommendationText: String
+            if recommendations.isEmpty {
+                recommendationText = L("errorHistoryNoRecommendations")
+            } else {
+                recommendationText = "\(L("errorHistoryRecommendations"))\n\(recommendations.joined(separator: "\n"))"
+            }
+            body = "\(eventHeading)\n\n\(eventLines)\n\n\(recommendationText)"
+        }
+
+        let textView = NSTextView(frame: NSRect(x: 0, y: 0, width: 760, height: 460))
+        textView.string = body
+        textView.isEditable = false
+        textView.isSelectable = true
+        textView.font = NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)
+        textView.textContainerInset = NSSize(width: 8, height: 8)
+        textView.isVerticallyResizable = true
+        textView.isHorizontallyResizable = false
+        textView.autoresizingMask = [.width]
+
+        let scrollView = NSScrollView(frame: NSRect(x: 0, y: 0, width: 760, height: 460))
+        scrollView.hasVerticalScroller = true
+        scrollView.autohidesScrollers = false
+        scrollView.documentView = textView
+        alert.accessoryView = scrollView
+        alert.runModal()
     }
 
     @objc private func changeHost() {
