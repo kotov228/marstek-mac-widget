@@ -180,4 +180,36 @@ final class AppLogicTests: XCTestCase {
         XCTAssertEqual(MarstekAppLogic.storedManualPower(NSNumber(value: 2500)), 2500)
         XCTAssertEqual(MarstekAppLogic.storedManualPower(NSNumber(value: -2500)), -2500)
     }
+
+    func testHMEventLogDecodesLittleEndianTimestampAndCode() {
+        let payload: [UInt8] = [
+            0xEA, 0x07, 0x08, 0x06, 0x11, 0x03, 0x04, 0x95, 0x01,
+            0xE3, 0x07, 0x0B, 0x19, 0x08, 0x2F, 0x01, 0x08, 0x00
+        ]
+
+        let events = MarstekDiagnostics.parseHMEvents(payload)
+
+        XCTAssertEqual(events, [
+            MarstekHMEvent(year: 2026, month: 8, day: 6, hour: 17, minute: 3, type: 4, code: 405),
+            MarstekHMEvent(year: 2019, month: 11, day: 25, hour: 8, minute: 47, type: 1, code: 8)
+        ])
+    }
+
+    func testKnownFaultCodesUseTroubleshootingDescriptors() {
+        XCTAssertEqual(MarstekDiagnostics.codeText(405), "405 (0x0195)")
+        XCTAssertEqual(MarstekDiagnostics.fault(for: 405)?.statusKey, "fault405Status")
+        XCTAssertEqual(MarstekDiagnostics.fault(for: 405)?.categoryKey, "faultInverterSide")
+        XCTAssertEqual(MarstekDiagnostics.fault(for: 410)?.statusKey, "fault410Status")
+        XCTAssertEqual(MarstekDiagnostics.fault(for: 430)?.treatmentKey, "fault410Treatment")
+        XCTAssertEqual(MarstekDiagnostics.fault(for: 0x5C0)?.statusKey, "fault5C0Status")
+        XCTAssertEqual(MarstekDiagnostics.fault(for: 0x5CB)?.treatmentKey, "fault5C8Treatment")
+        XCTAssertNil(MarstekDiagnostics.fault(for: 404))
+    }
+
+    func testHMEventLogSortsNewestFirst() {
+        let older = MarstekHMEvent(year: 2026, month: 8, day: 6, hour: 17, minute: 3, type: 4, code: 405)
+        let newer = MarstekHMEvent(year: 2026, month: 8, day: 6, hour: 17, minute: 47, type: 4, code: 405)
+
+        XCTAssertEqual(MarstekDiagnostics.sortedHMEventsNewestFirst([older, newer]), [newer, older])
+    }
 }

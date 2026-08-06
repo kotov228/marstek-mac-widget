@@ -41,6 +41,7 @@ Click the menu bar widget to open the history window.
 - Colors points and segments according to charging, discharging, or waiting.
 - Click any point to see its exact time, charge percentage, capacity, state, and
   power.
+- Click empty graph space to hide the selected point and its detail label.
 - In Manual mode, shows the configured signed setpoint next to the mode
   (`−` charge / `+` discharge).
 - Keeps the graph usable when telemetry is temporarily unavailable.
@@ -87,6 +88,8 @@ station over Bluetooth Low Energy (BLE):
 - Design capacity.
 - Error and warning status.
 - Individual cell voltages.
+- HM error history with timestamps, decimal and hexadecimal codes, known fault
+  descriptions, and localized troubleshooting recommendations.
 
 Bluetooth access is requested only when BMS diagnostics are opened. The normal
 Local API widget does not need Bluetooth permissions.
